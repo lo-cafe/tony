@@ -1,0 +1,5 @@
+{
+  "mockadillo.npmimports.quote-configuration" : "Single Quote",
+  "workspace.preview_type" : "custom",
+  "workspace.preview_url" : "localhost:3000"
+}
