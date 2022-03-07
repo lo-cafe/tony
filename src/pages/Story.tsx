@@ -485,22 +485,24 @@ const Story = () => {
                   onDrag={onDrag}
                   onStop={(...rest) => onDragEnd(item.id, ...rest)}
                 >
-                  <ChatNodeCard
-                    characters={selectedWorkspace.characters}
-                    setCharacter={setCharacter}
-                    setHoveredDeleteOption={setHoveredDeleteOption}
-                    addItem={addItem}
-                    isDragging={isDragging}
-                    selected={selectedChatNodeId === item.id}
-                    fadedOut={
-                      (addLinkMode && addLinkMode !== item.id) ||
-                      (!!hoveredDeleteOption && hoveredDeleteOption !== item.id)
-                    }
-                    onClick={handleCardClick(item.id)}
-                    removeLink={removeLink}
-                    setAddLinkMode={setAddLinkMode}
-                    item={item}
-                  />
+                  <div>
+                    <ChatNodeCard
+                      characters={selectedWorkspace.characters}
+                      setCharacter={setCharacter}
+                      setHoveredDeleteOption={setHoveredDeleteOption}
+                      addItem={addItem}
+                      isDragging={isDragging}
+                      selected={selectedChatNodeId === item.id}
+                      fadedOut={
+                        (addLinkMode && addLinkMode !== item.id) ||
+                        (!!hoveredDeleteOption && hoveredDeleteOption !== item.id)
+                      }
+                      onClick={handleCardClick(item.id)}
+                      removeLink={removeLink}
+                      setAddLinkMode={setAddLinkMode}
+                      item={item}
+                    />
+                  </div>
                 </Draggable>
               ))}
               {selectedChat.nodes.map((item, i) =>

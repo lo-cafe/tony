@@ -31,7 +31,7 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
   characters,
   fadedOut,
   selected,
-  ...rest
+  className,
 }) => {
   const [characterOpen, setCharacterOpen] = useState(false);
   const [linkedOpen, setLinkedOpen] = useState(false);
@@ -55,7 +55,7 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
   }, [linkedOpen, characterOpen]);
 
   return (
-    <Item id={item.id} fadedOut={fadedOut} selected={selected} {...rest}>
+    <Item id={item.id} fadedOut={fadedOut} selected={selected} className={className}>
       <AddItem onClick={handleOnClick(() => addItem(item.id))}>
         <FiPlus />
       </AddItem>
@@ -214,6 +214,11 @@ const ItemBody = styled.div`
   flex: 1;
   width: 100%;
   text-align: left;
+  word-break: break-all;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 `;
 
 const ItemTitle = styled.div`
