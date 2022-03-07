@@ -3,20 +3,8 @@ import styled, { css } from 'styled-components';
 import { nanoid } from 'nanoid';
 import Xarrow, { useXarrow, Xwrapper } from 'react-xarrows';
 import cloneDeep from 'lodash/cloneDeep';
-import Draggable, { DraggableEvent, DraggableData } from 'react-draggable'; // Both at the same time
-import {
-  FiLink,
-  FiMessageSquare,
-  FiList,
-  FiPlus,
-  FiTrash2,
-  FiEdit2,
-  FiBox,
-  FiCheck,
-  FiUser,
-  FiDownload,
-} from 'react-icons/fi';
-import AutowidthInput from 'react-autowidth-input';
+import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
+import { FiMessageSquare, FiList, FiPlus, FiBox, FiUser } from 'react-icons/fi';
 
 import {
   ID,
@@ -532,18 +520,6 @@ const Grabber = styled.div<{ grabbing?: boolean }>`
   cursor: ${({ grabbing }) => (grabbing ? 'grabbing' : 'grab')};
 `;
 
-const PillInput = styled(AutowidthInput)`
-  border: none;
-  color: inherit;
-  min-width: unset;
-  background: lightyellow;
-  border-radius: 4px;
-  padding: 4px 8px;
-  width: min-content;
-  font-weight: inherit;
-  font-size: inherit;
-`;
-
 const WorkspacesWrapper = styled.div`
   display: flex;
   position: fixed;
@@ -647,28 +623,6 @@ const Textarea = styled.textarea`
   min-height: 200px;
 `;
 
-const AddItem = styled.button`
-  color: white;
-  background: #0068f6;
-  border: none;
-  border-radius: 50%;
-  font-size: 16px;
-  height: 30px;
-  width: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  bottom: -15px;
-  left: -15px;
-  z-index: 2;
-  cursor: pointer;
-  transition: background 0.2s ease-in-out;
-  &:hover {
-    background: #0050d3;
-  }
-`;
-
 const ExternalWrapper = styled.div`
   width: 100vw;
   height: 100vh;
@@ -696,16 +650,6 @@ const ItemTitleBar = styled.div`
   width: 100%;
 `;
 
-const ItemBody = styled.div`
-  background: #f3f3f3;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 14px;
-  flex: 1;
-  width: 100%;
-  text-align: left;
-`;
-
 const ItemTitle = styled.div`
   display: flex;
   align-items: center;
@@ -727,26 +671,6 @@ const IdTag = styled.div`
   justify-content: center;
   white-space: nowrap;
 `;
-
-const Tag = styled.div`
-  background-color: #0068f6;
-  padding: 3px 6px;
-  border-radius: 8px;
-  color: white;
-  font-weight: 600;
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
-  transition: background-color 300ms ease-out;
-  &:hover {
-    background-color: #005ee2;
-  }
-`;
-
-const CardStyle = css``;
 
 const GoingToPanel = styled.div`
   padding: 10px;
