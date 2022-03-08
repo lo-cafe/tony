@@ -392,10 +392,10 @@ const Story = () => {
         <PlayModeWrapper>
           <div>
             <CharacterPlayModeName>
-              {selectedWorkspace?.characters.find(
+              {selectedWorkspace?.characters && selectedWorkspace?.characters.find(
                 (char) =>
                   char.id === selectedChat?.nodes.find((node) => node.id === playNode)?.character
-              ).name || 'No one'}{' '}
+              )?.name || 'No one'}{' '}
               said:
             </CharacterPlayModeName>
             <p>{selectedChat?.nodes.find((node) => node.id === playNode)?.message}</p>
@@ -502,7 +502,7 @@ const Story = () => {
           </SidePanelContent>
           <Button onClick={() => deleteChatNode(selectedChatNodeId!)}>Delete</Button>
           {selectedChatNode.type === 'text' && (
-            <Button onClick={() => play(selectedChatNodeId)}>Play</Button>
+            <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
           )}
         </SidePanel>
       )}
