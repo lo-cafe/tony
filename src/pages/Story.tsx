@@ -392,7 +392,10 @@ const Story = () => {
         <PlayModeWrapper>
           <div>
             <CharacterPlayModeName>
-              {selectedChat?.nodes.find((node) => node.id === playNode)?.character || 'No one'}{' '}
+              {selectedWorkspace?.characters.find(
+                (char) =>
+                  char.id === selectedChat?.nodes.find((node) => node.id === playNode)?.character
+              ).name || 'No one'}{' '}
               said:
             </CharacterPlayModeName>
             <p>{selectedChat?.nodes.find((node) => node.id === playNode)?.message}</p>
