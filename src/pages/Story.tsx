@@ -392,10 +392,12 @@ const Story = () => {
         <PlayModeWrapper>
           <div>
             <CharacterPlayModeName>
-              {selectedWorkspace?.characters && selectedWorkspace?.characters.find(
-                (char) =>
-                  char.id === selectedChat?.nodes.find((node) => node.id === playNode)?.character
-              )?.name || 'No one'}{' '}
+              {(selectedWorkspace?.characters &&
+                selectedWorkspace?.characters.find(
+                  (char) =>
+                    char.id === selectedChat?.nodes.find((node) => node.id === playNode)?.character
+                )?.name) ||
+                'No one'}{' '}
               said:
             </CharacterPlayModeName>
             <p>{selectedChat?.nodes.find((node) => node.id === playNode)?.message}</p>
@@ -500,10 +502,14 @@ const Story = () => {
               value={selectedChatNode.message}
             />
           </SidePanelContent>
-          <Button onClick={() => deleteChatNode(selectedChatNodeId!)}>Delete</Button>
-          {selectedChatNode.type === 'text' && (
-            <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
-          )}
+          <div>
+            {selectedChatNode.type === 'text' && (
+              <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
+            )}
+            <Button red onClick={() => deleteChatNode(selectedChatNodeId!)}>
+              Delete
+            </Button>
+          </div>
         </SidePanel>
       )}
       <ExternalWrapper onClick={unselect} ref={scrollRef}>
