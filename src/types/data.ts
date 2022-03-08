@@ -1,6 +1,6 @@
 export type ID = string;
 
-export type ChatNodeType = 'text' | 'answer';
+export type ChatNodeType = 'text' | 'answer' | 'condition';
 
 export interface ChatNode {
   id: ID;

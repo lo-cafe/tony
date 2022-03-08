@@ -18,6 +18,7 @@ interface ChatNodeCardProps extends React.HTMLProps<HTMLDivElement>, ItemProps {
   setHoveredDeleteOption: (id: ID | null) => void;
   setCharacter: (itemId: ID, charId: ID) => void;
   characters: Character[];
+  onCardClick: (id: ID) => void;
 }
 
 const ChatNodeCard: FC<ChatNodeCardProps> = ({
@@ -32,6 +33,7 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
   fadedOut,
   selected,
   className,
+  onCardClick,
 }) => {
   const [characterOpen, setCharacterOpen] = useState(false);
   const [linkedOpen, setLinkedOpen] = useState(false);
@@ -43,7 +45,7 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
 
   const handleOnClick = (func: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isDragging) return;
+    if (!func || isDragging) return;
     func();
   };
 
@@ -55,7 +57,13 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
   }, [linkedOpen, characterOpen]);
 
   return (
-    <Item id={item.id} fadedOut={fadedOut} selected={selected} className={className}>
+    <Item
+      id={item.id}
+      fadedOut={fadedOut}
+      onClick={handleOnClick(() => onCardClick && onCardClick(item.id))}
+      selected={selected}
+      className={className}
+    >
       <AddItem onClick={handleOnClick(() => addItem(item.id))}>
         <FiPlus />
       </AddItem>

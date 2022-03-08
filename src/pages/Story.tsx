@@ -80,6 +80,7 @@ const Story = () => {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<ID | null>(null);
   const [selectedChatNodeId, setSelectedChatNodeId] = useState<ID | null>(null);
+  const [playNode, setPlayNode] = useState<ID | null>(null);
 
   const [isDragging, setIsDragging] = useState(false);
   const [addLinkMode, setAddLinkMode] = useState<ID | false>(false);
@@ -181,8 +182,7 @@ const Story = () => {
     }, 0);
   };
 
-  const handleCardClick = (id: ID) => (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleCardClick = (id: ID) => {
     if (addLinkMode) {
       addLink(id);
     } else if (!isDragging) {
@@ -372,8 +372,48 @@ const Story = () => {
     });
   };
 
+  const play = (id: ID) => {
+    const dataCopy = getSelectedChat(cloneDeep(data));
+    const target = dataCopy?.nodes.find((x) => x.id === id);
+    if (!target || target.type !== 'text') return;
+    setPlayNode(id);
+  };
+
+  const playNext = (goingTo: ID) => {
+    // const dataCopy = cloneDeep(data);
+    // const target = dataCopy.find((x) => x.id === id);
+    // if (!target) return;
+    setPlayNode(goingTo);
+  };
+
   return (
     <>
+      {!!playNode && (
+        <PlayModeWrapper>
+          <div>
+            <CharacterPlayModeName>
+              {selectedChat?.nodes.find((node) => node.id === playNode)?.character || 'No one'}{' '}
+              said:
+            </CharacterPlayModeName>
+            <p>{selectedChat?.nodes.find((node) => node.id === playNode)?.message}</p>
+            {selectedChat?.nodes
+              .filter((node) =>
+                selectedChat?.nodes.find((node) => node.id === playNode)?.goesTo.includes(node.id)
+              )
+              ?.map((node) => (
+                <Button
+                  key={node.id}
+                  onClick={() => setPlayNode(node.type === 'text' ? node.id : node.goesTo[0])}
+                >
+                  {node.type === 'text' ? 'Next' : node.message}
+                </Button>
+              ))}
+            {selectedChat?.nodes.find((node) => node.id === playNode)?.goesTo.length === 0 && (
+              <Button onClick={() => setPlayNode(null)}>Finish</Button>
+            )}
+          </div>
+        </PlayModeWrapper>
+      )}
       {grabbingMode && (
         <Grabber grabbing={!!isGrabbing} onMouseDown={startGrabbing} onMouseUp={stopGrabbing} />
       )}
@@ -457,7 +497,10 @@ const Story = () => {
               value={selectedChatNode.message}
             />
           </SidePanelContent>
-          <DeleteButton onClick={() => deleteChatNode(selectedChatNodeId!)}>Delete</DeleteButton>
+          <Button onClick={() => deleteChatNode(selectedChatNodeId!)}>Delete</Button>
+          {selectedChatNode.type === 'text' && (
+            <Button onClick={() => play(selectedChatNodeId)}>Play</Button>
+          )}
         </SidePanel>
       )}
       <ExternalWrapper onClick={unselect} ref={scrollRef}>
@@ -485,7 +528,7 @@ const Story = () => {
                         (addLinkMode && addLinkMode !== item.id) ||
                         (!!hoveredDeleteOption && hoveredDeleteOption !== item.id)
                       }
-                      onClick={handleCardClick(item.id)}
+                      onCardClick={() => handleCardClick(item.id)}
                       removeLink={removeLink}
                       setAddLinkMode={setAddLinkMode}
                       item={item}
@@ -508,6 +551,32 @@ const Story = () => {
 
 export default Story;
 
+const PlayModeWrapper = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 20;
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(40px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 24px;
+  & > div {
+    max-width: 90%;
+    width: 400px;
+  }
+`;
+
+const CharacterPlayModeName = styled.div`
+  font-weight: bold;
+`;
+
 const Grabber = styled.div<{ grabbing?: boolean }>`
   position: fixed;
   top: 0;
@@ -516,7 +585,7 @@ const Grabber = styled.div<{ grabbing?: boolean }>`
   bottom: 0;
   width: 100%;
   height: 100%;
-  z-index: 999;
+  z-index: 10;
   cursor: ${({ grabbing }) => (grabbing ? 'grabbing' : 'grab')};
 `;
 
@@ -539,14 +608,15 @@ const CharactersWrapper = styled(WorkspacesWrapper)`
   top: 75px;
 `;
 
-const DeleteButton = styled.button`
+const Button = styled.button<{ red?: boolean }>`
   display: flex;
+  margin-top: 8px;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 48px;
-  background: red;
+  background: ${({ red }) => (red ? 'red' : '#0068f6')};
   color: white;
   border: none;
   border-radius: 8px;
@@ -556,7 +626,7 @@ const DeleteButton = styled.button`
   transition: background 0.2s ease-in-out;
   align-self: flex-end;
   &:hover {
-    background: #ff5252;
+    background: ${({ red }) => (red ? '#ff5252' : '#0058d3')};
   }
 `;
 
