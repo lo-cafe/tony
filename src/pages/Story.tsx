@@ -76,7 +76,6 @@ const Story = () => {
   const [grabbingMode, setGrabbingMode] = useState(false);
   const [isGrabbing, _setIsGrabbing] = useState<MousePosition | null>(null);
 
-  const [editPillModeId, setEditPillModeId] = useState<ID | null>(null);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(null);
   const [selectedChatId, setSelectedChatId] = useState<ID | null>(null);
   const [selectedChatNodeId, setSelectedChatNodeId] = useState<ID | null>(null);
@@ -547,7 +546,23 @@ const Story = () => {
               ))}
               {selectedChat.nodes.map((item, i) =>
                 item.goesTo.map((goingTo) => (
-                  <Xarrow zIndex={1} key={nanoid()} start={item.id} end={goingTo} />
+                  <Xarrow
+                    dashness
+                    headSize={4}
+                    zIndex={
+                      selectedChatNodeId === item.id || hoveredDeleteOption === goingTo ? 1 : 0
+                    }
+                    color={
+                      selectedChatNodeId === item.id || hoveredDeleteOption === goingTo
+                        ? '#0068f6'
+                        : '#91b1df'
+                    }
+                    headShape="circle"
+                    key={nanoid()}
+                    start={item.id}
+                    end={goingTo}
+                    curveness={0.8}
+                  />
                 ))
               )}
             </Xwrapper>

@@ -21,8 +21,10 @@
     "react-draggable": "^4.4.4",
     "react-hook-form": "^7.27.1",
     "react-icons": "^4.3.1",
+    "react-popper": "^2.2.5",
     "react-query": "^3.34.16",
     "react-router-dom": "^6.2.1",
+    "react-transition-group": "^4.4.2",
     "react-xarrows": "^2.0.2",
     "styled-components": "^5.3.3"
   },
