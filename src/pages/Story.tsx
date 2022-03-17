@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid';
 import Xarrow, { useXarrow, Xwrapper } from 'react-xarrows';
 import cloneDeep from 'lodash/cloneDeep';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
-import { FiMessageSquare, FiList, FiPlus, FiBox, FiUser } from 'react-icons/fi';
+import { FiMessageSquare, FiList, FiPlus, FiBox, FiUser, FiHelpCircle } from 'react-icons/fi';
 
 import {
   ID,
@@ -13,46 +13,26 @@ import {
   Chat,
   Workspace,
   DataStructure,
-  ChatNodeType,
+  ChatNodeTypes,
 } from '~/types/data';
 
 import FixedButton from '~/components/FixedButton';
 import ChatNodeCard from '~/components/ChatNodeCard';
+import {
+  CHAT_NODE_CONDITION_TYPE,
+  CHAT_NODE_ANSWER_TYPE,
+  CHAT_NODE_TEXT_TYPE,
+} from '~/constants/variables';
 import downloadFile from '~/utils/downloadFile';
-import { Optional } from '~/types/utils';
+import {
+  initialCharacterData,
+  initialChatNodeData,
+  initialChatData,
+  initialWorkspaceData,
+  initialData,
+} from '~/constants/initialData';
 
 const IDS_SIZE = 8;
-
-const initialCharacterData = (): Character => ({
-  id: nanoid(8),
-  name: 'Char 1',
-  description: '',
-});
-
-const initialChatNodeData = (): ChatNode => ({
-  id: nanoid(8),
-  message: 'Enter text...',
-  type: 'text',
-  goesTo: [],
-  character: initialCharacterData().id,
-  x: 444,
-  y: 202,
-});
-
-const initialChatData = (): Chat => ({
-  id: nanoid(IDS_SIZE),
-  name: 'New Chat',
-  nodes: [initialChatNodeData()],
-});
-
-const initialWorkspaceData = (): Workspace => ({
-  name: 'New Workspace',
-  id: nanoid(IDS_SIZE),
-  characters: [initialCharacterData()],
-  chats: [initialChatData()],
-});
-
-const initialData: DataStructure = [initialWorkspaceData()];
 
 const loadOrSave = (data?: DataStructure): DataStructure => {
   if (typeof window === 'undefined') return initialData;
@@ -80,6 +60,8 @@ const Story = () => {
   const [selectedChatId, setSelectedChatId] = useState<ID | null>(null);
   const [selectedChatNodeId, setSelectedChatNodeId] = useState<ID | null>(null);
   const [playNode, setPlayNode] = useState<ID | null>(null);
+
+  const [scale, setScale] = useState(0.9);
 
   const [isDragging, setIsDragging] = useState(false);
   const [addLinkMode, setAddLinkMode] = useState<ID | false>(false);
@@ -110,7 +92,7 @@ const Story = () => {
     const dataCopy = cloneDeep(data);
     const target = getSelectedChat(dataCopy)?.nodes.find((node) => node.id === originChatNodeId);
     if (!target) return;
-    target.goesTo = target.goesTo.filter((i) => i !== link);
+    target.goesTo = target.goesTo.filter((i: ID) => i !== link);
     setData(dataCopy);
     setHoveredDeleteOption(null);
   };
@@ -126,7 +108,7 @@ const Story = () => {
     setAddLinkMode(false);
   };
 
-  const addItem = (originChatNodeId: ID, type: ChatNodeType = 'text') => {
+  const addItem = (originChatNodeId: ID, type: ChatNodeTypes = CHAT_NODE_TEXT_TYPE) => {
     const dataCopy = cloneDeep(data);
     const selectedChatCopy = getSelectedChat(dataCopy);
     const originNode = selectedChatCopy?.nodes.find((item) => item.id === originChatNodeId);
@@ -163,13 +145,16 @@ const Story = () => {
     const selectedChatCopy = getSelectedChat(dataCopy);
     if (!selectedChatCopy) return;
     selectedChatCopy.nodes = selectedChatCopy.nodes
-      .map((item) => ({ ...item, goesTo: item.goesTo.filter((i) => i !== id) }))
+      .map((item) => ({ ...item, goesTo: item.goesTo.filter((i: ID) => i !== id) }))
       .filter((item) => item.id !== id);
     setData(dataCopy);
   };
 
-  const onDrag = () => {
-    setIsDragging(true);
+  const onDrag = (id: ID, _e: DraggableEvent, info: DraggableData) => {
+    const { x: oldX, y: oldY } = selectedChat!.nodes.find((item) => item.id === id)!;
+    if (Math.abs(oldX - info.x) > 1 || Math.abs(oldY - info.y) > 1) {
+      setIsDragging(true);
+    }
     updateXarrow();
   };
 
@@ -198,7 +183,7 @@ const Story = () => {
     setData(dataCopy);
   };
 
-  const changeType = (id: ID, type: ChatNodeType) => {
+  const changeType = (id: ID, type: ChatNodeTypes) => {
     if (!selectedChatNode) return;
     const dataCopy = cloneDeep(data);
     const selectedChatNodeCopy = getSelectedChat(dataCopy)?.nodes.find((node) => node.id === id);
@@ -328,12 +313,22 @@ const Story = () => {
     setIsGrabbing(null);
   };
 
+  const zoom = (e: WheelEvent) => {
+    if (e.ctrlKey) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      console.log(e);
+    }
+  };
+
   useEffect(() => {
     document.addEventListener('keydown', onSpaceDown);
     document.addEventListener('keyup', onSpaceUp);
+    document.addEventListener('wheel', zoom);
     return () => {
       document.removeEventListener('keydown', onSpaceDown);
       document.removeEventListener('keyup', onSpaceUp);
+      document.removeEventListener('wheel', zoom);
     };
   }, []);
 
@@ -354,16 +349,6 @@ const Story = () => {
     const dataCopy = cloneDeep(data);
     const target = dataCopy.find((x) => x.id === id);
     if (!target) return;
-    // target.chats = target.chats.map((chat) => ({
-    //   ...chat,
-    //   nodes: chat.nodes.map(({ id, message, type, goesTo, character }) => ({
-    //     id,
-    //     message,
-    //     type,
-    //     goesTo,
-    //     character,
-    //   })),
-    // }));
     downloadFile({
       data: JSON.stringify(target),
       fileName: `${target.name}-Chats.json`,
@@ -374,15 +359,8 @@ const Story = () => {
   const play = (id: ID) => {
     const dataCopy = getSelectedChat(cloneDeep(data));
     const target = dataCopy?.nodes.find((x) => x.id === id);
-    if (!target || target.type !== 'text') return;
+    if (!target || target.type !== CHAT_NODE_TEXT_TYPE) return;
     setPlayNode(id);
-  };
-
-  const playNext = (goingTo: ID) => {
-    // const dataCopy = cloneDeep(data);
-    // const target = dataCopy.find((x) => x.id === id);
-    // if (!target) return;
-    setPlayNode(goingTo);
   };
 
   return (
@@ -407,9 +385,11 @@ const Story = () => {
               ?.map((node) => (
                 <Button
                   key={node.id}
-                  onClick={() => setPlayNode(node.type === 'text' ? node.id : node.goesTo[0])}
+                  onClick={() =>
+                    setPlayNode(node.type === CHAT_NODE_TEXT_TYPE ? node.id : node.goesTo[0])
+                  }
                 >
-                  {node.type === 'text' ? 'Next' : node.message}
+                  {node.type === CHAT_NODE_TEXT_TYPE ? 'Next' : node.message}
                 </Button>
               ))}
             {selectedChat?.nodes.find((node) => node.id === playNode)?.goesTo.length === 0 && (
@@ -418,9 +398,8 @@ const Story = () => {
           </div>
         </PlayModeWrapper>
       )}
-      {grabbingMode && (
-        <Grabber grabbing={!!isGrabbing} onMouseDown={startGrabbing} onMouseUp={stopGrabbing} />
-      )}
+      {/* {grabbingMode && ( */}
+      {/* )} */}
       <WorkspacesWrapper>
         {data.map((w) => (
           <FixedButton
@@ -474,25 +453,32 @@ const Story = () => {
           <SidePanelContent>
             <ItemTitleBar>
               <ItemTitle>
-                {selectedChatNode.type === 'text' ? <FiMessageSquare /> : <FiList />}
+                {selectedChatNode.type === CHAT_NODE_TEXT_TYPE ? <FiMessageSquare /> : <FiList />}
                 {selectedChatNode.type}
               </ItemTitle>
               <IdTag>{selectedChatNode.id}</IdTag>
             </ItemTitleBar>
             <TypeChooserWrapper>
               <TypeChooser
-                onClick={() => changeType(selectedChatNodeId!, 'text')}
-                selected={selectedChatNode.type === 'text'}
+                onClick={() => changeType(selectedChatNodeId!, CHAT_NODE_TEXT_TYPE)}
+                selected={selectedChatNode.type === CHAT_NODE_TEXT_TYPE}
               >
                 <FiMessageSquare />
                 <span>Text</span>
               </TypeChooser>
               <TypeChooser
-                onClick={() => changeType(selectedChatNodeId!, 'answer')}
-                selected={selectedChatNode.type === 'answer'}
+                onClick={() => changeType(selectedChatNodeId!, CHAT_NODE_ANSWER_TYPE)}
+                selected={selectedChatNode.type === CHAT_NODE_ANSWER_TYPE}
               >
                 <FiList />
                 <span>Answer</span>
+              </TypeChooser>
+              <TypeChooser
+                onClick={() => changeType(selectedChatNodeId!, CHAT_NODE_CONDITION_TYPE)}
+                selected={selectedChatNode.type === CHAT_NODE_CONDITION_TYPE}
+              >
+                <FiHelpCircle />
+                <span>Condition</span>
               </TypeChooser>
             </TypeChooserWrapper>
             <Textarea
@@ -502,7 +488,7 @@ const Story = () => {
             />
           </SidePanelContent>
           <div>
-            {selectedChatNode.type === 'text' && (
+            {selectedChatNode.type === CHAT_NODE_TEXT_TYPE && (
               <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
             )}
             <Button red onClick={() => deleteChatNode(selectedChatNodeId!)}>
@@ -512,7 +498,13 @@ const Story = () => {
         </SidePanel>
       )}
       <ExternalWrapper onClick={unselect} ref={scrollRef}>
-        <Wrapper>
+        <Grabber
+          grabMode={grabbingMode}
+          grabbing={!!isGrabbing}
+          onMouseDown={startGrabbing}
+          onMouseUp={stopGrabbing}
+        />
+        <Wrapper style={{ transform: `scale(${scale})` }}>
           {selectedWorkspace && selectedChat && selectedChat && (
             <Xwrapper>
               {selectedChat.nodes.map((item, i) => (
@@ -521,10 +513,11 @@ const Story = () => {
                   position={{ x: item.x, y: item.y }}
                   scale={1}
                   key={item.id}
-                  onDrag={onDrag}
+                  onDrag={(...rest) => onDrag(item.id, ...rest)}
                   onStop={(...rest) => onDragEnd(item.id, ...rest)}
+                  handle=".handler"
                 >
-                  <div>
+                  <CardHandler className="handler">
                     <ChatNodeCard
                       characters={selectedWorkspace.characters}
                       setCharacter={setCharacter}
@@ -541,12 +534,13 @@ const Story = () => {
                       setAddLinkMode={setAddLinkMode}
                       item={item}
                     />
-                  </div>
+                  </CardHandler>
                 </Draggable>
               ))}
               {selectedChat.nodes.map((item, i) =>
                 item.goesTo.map((goingTo) => (
                   <Xarrow
+                    SVGcanvasStyle={{ transform: `scale(${scale})` }}
                     dashness
                     headSize={4}
                     zIndex={
@@ -609,7 +603,7 @@ const Grabber = styled.div<{ grabbing?: boolean }>`
   bottom: 0;
   width: 100%;
   height: 100%;
-  z-index: 10;
+  z-index: ${({ grabMode }) => (grabMode ? 10 : 0)};
   cursor: ${({ grabbing }) => (grabbing ? 'grabbing' : 'grab')};
 `;
 
@@ -680,6 +674,10 @@ const TypeChooser = styled.button<{ selected: boolean }>`
   }
 `;
 
+const CardHandler = styled.div`
+  pointer-events: all;
+`;
+
 const SidePanelContent = styled.div`
   display: flex;
   flex-direction: column;
@@ -697,6 +695,7 @@ const SidePanel = styled.div`
   padding: 25px;
   border-radius: 24px;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  border: solid 1px rgba(255, 255, 255, 0.9);
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -722,13 +721,14 @@ const ExternalWrapper = styled.div`
   height: 100vh;
   overflow: auto;
   background-color: #fafafa;
-  background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.11' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
 `;
 
 const Wrapper = styled.div`
   height: 10000px;
   width: 10000px;
   position: relative;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.11' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
 `;
 
 const ItemTitleBar = styled.div`
