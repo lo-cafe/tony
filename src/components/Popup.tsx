@@ -8,7 +8,6 @@ import Card from './Card'
 
 const Popup = ({ children, referenceElement, active, popupRef, onCloseAreaClick, placement = 'right', offset = 8 }) => {
    const [popperElement, setPopperElement] = useState(null)
-   const closeAreaRef = useRef(null)
    const { styles, attributes } = usePopper(referenceElement, popperElement, {
       placement,
       modifiers: [
@@ -37,28 +36,11 @@ const Popup = ({ children, referenceElement, active, popupRef, onCloseAreaClick,
       if (popupRef) popupRef.current = el
    }
 
-   useEffect(() => {
-      if (!closeAreaRef.current) return
-      if (active) closeAreaRef.current.addEventListener('contextmenu', preventRightClick)
-      else closeAreaRef.current.removeEventListener('contextmenu', preventRightClick)
-      return () => {
-         if (closeAreaRef.current) closeAreaRef.current.removeEventListener('contextmenu', preventRightClick)
-      }
-   }, [closeAreaRef, active])
-
-   useEffect(() => {
-      if (!popperElement) return
-      if (active) popperElement.addEventListener('contextmenu', preventRightClick)
-      else closeAreaRef.current.removeEventListener('contextmenu', preventRightClick)
-      return () => {
-         if (popperElement.current) popperElement.removeEventListener('contextmenu', preventRightClick)
-      }
-   }, [popperElement, active])
    return (
       <>
          {createPortal(
             <Transition in={active} timeout={200} unmountOnExit mountOnEnter appear>
-               {() => <CloseArea ref={closeAreaRef} onClick={onCloseAreaClick} />}
+               {() => <CloseArea onClick={onCloseAreaClick} />}
             </Transition>,
             document.body
          )}

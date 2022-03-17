@@ -1,8 +1,22 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
-import { FiMessageSquare, FiTrash2, FiPlus, FiUser, FiList, FiLink } from 'react-icons/fi';
+import {
+  FiMessageSquare,
+  FiTrash2,
+  FiPlus,
+  FiUser,
+  FiList,
+  FiLink,
+  FiHelpCircle,
+} from 'react-icons/fi';
 
+import ContextMenuInjector from '~/components/ContextMenuInjector';
 import { ChatNode, ID, Character } from '~/types/data';
+import {
+  CHAT_NODE_CONDITION_TYPE,
+  CHAT_NODE_ANSWER_TYPE,
+  CHAT_NODE_TEXT_TYPE,
+} from '~/constants/variables';
 
 interface ItemProps {
   fadedOut?: boolean;
@@ -56,6 +70,22 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
     };
   }, [linkedOpen, characterOpen]);
 
+  if (item.type === CHAT_NODE_CONDITION_TYPE) {
+    return (
+      <Item
+        id={item.id}
+        className={className}
+        selected={selected}
+        fadedOut={fadedOut}
+        onClick={handleOnClick(() => onCardClick && onCardClick(item.id))}
+      >
+        <button>Conditions</button>
+        <FiHelpCircle />
+        <button>Links</button>
+      </Item>
+    );
+  }
+
   return (
     <Item
       id={item.id}
@@ -69,7 +99,7 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
       </AddItem>
       <ItemTitleBar>
         <ItemTitle>
-          {item.type === 'text' ? <FiMessageSquare /> : <FiList />}
+          {item.type === CHAT_NODE_TEXT_TYPE ? <FiMessageSquare /> : <FiList />}
           {item.type}
         </ItemTitle>
         <IdTag>
@@ -78,47 +108,48 @@ const ChatNodeCard: FC<ChatNodeCardProps> = ({
       </ItemTitleBar>
       <ItemBody>{item.message}</ItemBody>
       <ItemBottomBar>
-        <Tag onClick={handleOnClick(() => setCharacterOpen((old) => !old))}>
-          <FiUser />
-          <span>{characters.find((char) => char.id === item.character)?.name || 'No one'}</span>
-        </Tag>
-        <Tag onClick={handleOnClick(() => setLinkedOpen((old) => !old))}>
-          <FiLink />
-          <span>{item.goesTo.length}</span>
-        </Tag>
+        <ContextMenuInjector
+          isDragging={isDragging}
+          options={characters.map((char) => ({
+            label: char.name,
+            icon: <FiUser />,
+            type: 'item',
+            onClick: () => setCharacter(item.id, char.id),
+          }))}
+        >
+          <Tag>
+            <FiUser />
+            <span>{characters.find((char) => char.id === item.character)?.name || 'No one'}</span>
+          </Tag>
+        </ContextMenuInjector>
+        <ContextMenuInjector
+          isDragging={isDragging}
+          options={[
+            ...item.goesTo.map((goingTo) => ({
+              label: <Id>{goingTo}</Id>,
+              icon: <FiTrash2 />,
+              type: 'item',
+              color: 'red',
+              onClick: () => removeLink(item.id, goingTo),
+              onMouseEnter: () => setHoveredDeleteOption(goingTo),
+              onMouseLeave: () => setHoveredDeleteOption(null),
+            })),
+            { type: 'divider' },
+            {
+              color: '#0050d3',
+              type: 'item',
+              label: 'Add link',
+              icon: <FiPlus />,
+              onClick: () => setAddLinkMode(item.id),
+            },
+          ]}
+        >
+          <Tag>
+            <FiLink />
+            <span>{item.goesTo.length}</span>
+          </Tag>
+        </ContextMenuInjector>
       </ItemBottomBar>
-      {linkedOpen && (
-        <GoingToPanel>
-          {item.goesTo.map((goingTo) => (
-            <GoingToPanelItem
-              onMouseEnter={() => setHoveredDeleteOption(goingTo)}
-              onMouseLeave={() => setHoveredDeleteOption(null)}
-              key={goingTo}
-              onClick={handleOnClick(() => removeLink(item.id, goingTo))}
-            >
-              <Id>{goingTo}</Id>
-              <FiTrash2 />
-            </GoingToPanelItem>
-          ))}
-          <GoingToPanelItem add onClick={handleOnClick(() => setAddLinkMode(item.id))}>
-            <span>Add link</span>
-            <FiPlus />
-          </GoingToPanelItem>
-        </GoingToPanel>
-      )}
-      {characterOpen && (
-        <GoingToPanel>
-          {characters.map((char) => (
-            <GoingToPanelItem
-              key={char.id}
-              add
-              onClick={handleOnClick(() => setCharacter(item.id, char.id))}
-            >
-              {char.name}
-            </GoingToPanelItem>
-          ))}
-        </GoingToPanel>
-      )}
     </Item>
   );
 };
@@ -153,22 +184,8 @@ const AddItem = styled.button`
   }
 `;
 
-const ExternalWrapper = styled.div`
-  width: 100vw;
-  height: 100vh;
-  overflow: auto;
-  background-color: #fafafa;
-  background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.11' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
-`;
-
-const Wrapper = styled.div`
-  height: 10000px;
-  width: 10000px;
-  position: relative;
-`;
-
-const Item = styled.div<ItemProps>`
-  padding: ${({ selected }) => (selected ? '6px' : '10px')};
+const Item = styled.div<ItemProps & { condition?: boolean }>`
+  padding: 10px;
   display: inline-block;
   background: white;
   border-radius: 16px;
@@ -186,10 +203,17 @@ const Item = styled.div<ItemProps>`
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
   transition: box-shadow 300ms ease-out, opacity 300ms ease-out;
   opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
-  border: ${({ selected }) => (selected ? '4px solid #00bcd4' : 'none')};
-  ${AddItem} {
-    left: ${({ selected }) => (selected ? '-19px' : '-15px')};
-    bottom: ${({ selected }) => (selected ? '-19px' : '-15px')};
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    border: ${({ selected }) => (selected ? '4px solid #00bcd4' : '0px solid #00bcd4')};
+    transition: border 150ms ease-out;
+    pointer-events: none;
   }
   &:hover {
     box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.15);

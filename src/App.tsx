@@ -21,7 +21,7 @@ const GlobalStyles = createGlobalStyle`
     padding: 0;
     font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   }
-  * {
+  *, *::after, *::before {
     box-sizing: border-box;
   }
   @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');

@@ -9,6 +9,7 @@
     "prettier": "prettier 'src/**/*' --write --ignore-unknown"
   },
   "dependencies": {
+    "@popperjs/core": "^2.11.4",
     "axios": "^0.26.0",
     "firebase": "^9.6.7",
     "jszip": "^3.7.1",
