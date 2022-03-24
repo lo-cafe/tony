@@ -87,12 +87,17 @@ const Story = () => {
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(loadedData[0].id);
   const [selectedChatId, setSelectedChatId] = useState<ID | null>(loadedData[0].chats[0].id);
-  const [playNode, setPlayNode] = useState<ID | null>(null);
   const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
+
+  const [whatToPlay, setWhatToPlay] = useState<{ toShow: ChatNode; buttons: ChatNode[] } | null>(
+    null
+  );
 
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const reactFlowWrapper = useRef(null);
   const lastCopied = useRef<null | Node>(null);
+  const transformedData = useRef<any>(null);
+  const playModeAnswersIds = useRef<ID[]>([]);
 
   const setChatsNames = (newChats: (old: Partial<Chat>[]) => Partial<Chat>[]) =>
     _setChatsNames((old) => newChats(old).map(({ id, name }) => ({ id, name })));
@@ -111,6 +116,7 @@ const Story = () => {
 
   const selectedWorkspace = getSelectedWorkspace(data.current);
   const selectedChat = getSelectedChat(data.current);
+  const selectedNodes = useMemo(() => nodes.filter((x) => x.selected), [nodes]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { value } = e.target;
@@ -408,45 +414,122 @@ const Story = () => {
     setSelectedChatId(firstChat ? firstChat.id : null);
   };
 
-  const selectedNodes = useMemo(() => nodes.filter((x) => x.selected), [nodes]);
+  const transformData = () => {
+    const dataCopy = cloneDeep(data.current);
+    transformedData.current = dataCopy.map((ws) => ({
+      ...ws,
+      chats: ws.chats.map((ch) => ({
+        id: ch.id,
+        name: ch.name,
+        nodes: ch.nodes.map((nd) => ({
+          id: nd.id,
+          type: nd.type,
+          message: nd.data.message,
+          character: nd.data.character,
+          conditions: nd.data.conditions,
+          goesTo:
+            nd.type === CHAT_NODE_CONDITION_TYPE
+              ? ch.edges
+                  .filter((e) => e.source === nd.id)
+                  .reduce(
+                    (prev: { conditions: string[]; yes: string[]; no: string[] }, curr) => {
+                      const newConditions = curr.sourceHandle === 'condition' ? [curr.target] : [];
+                      const newYes = curr.sourceHandle === 'yes' ? [curr.target] : [];
+                      const newNo = curr.sourceHandle === 'no' ? [curr.target] : [];
+                      return {
+                        conditions: [...prev.conditions, ...newConditions],
+                        yes: [...prev.yes, ...newYes],
+                        no: [...prev.no, ...newNo],
+                      };
+                    },
+                    { conditions: [], yes: [], no: [] }
+                  )
+              : ch.edges.filter((e) => e.source === nd.id).map((e) => e.target),
+        })),
+      })),
+    }));
+  };
 
-  // console.log(edges)
+  const playFrom = (firstNode?: ChatNode): void => {
+    if (!firstNode) {
+      playModeAnswersIds.current = [];
+      return setWhatToPlay(null);
+    }
+    const getLinkedNodes = (node: ChatNode, handler: 'yes' | 'no' | 'condition' | 'a' = 'a') => {
+      const relatedEdges = getRelatedEdges(node.id, edges);
+      const nextNodes = nodes.filter((x) =>
+        relatedEdges
+          .filter((x) => x.source === node.id && x.sourceHandle === handler)
+          .map((e) => e.target)
+          .includes(x.id)
+      );
+      return nextNodes;
+    };
+    const whatToShow = (rawNodes: ChatNode[]) =>
+      rawNodes
+        .map((nd) => {
+          switch (nd.type) {
+            case CHAT_NODE_CONDITION_TYPE:
+              const conditionNodeIds = getLinkedNodes(nd, 'condition').map((x) => x.id);
+              return conditionNodeIds.every((id) => playModeAnswersIds.current?.includes(id))
+                ? getLinkedNodes(nd, 'yes')
+                : getLinkedNodes(nd, 'no');
+            default:
+              return nd;
+          }
+        })
+        .flat();
+
+    switch (firstNode.type) {
+      case CHAT_NODE_CONDITION_TYPE: {
+        return playFrom(whatToShow(getLinkedNodes(firstNode, 'no'))[0]);
+      }
+      case CHAT_NODE_ANSWER_TYPE: {
+        playModeAnswersIds.current = [...playModeAnswersIds.current, firstNode.id];
+        return playFrom(whatToShow(getLinkedNodes(firstNode))[0]);
+      }
+      case CHAT_NODE_TEXT_TYPE: {
+        setWhatToPlay({
+          toShow: firstNode,
+          buttons: whatToShow(getLinkedNodes(firstNode, 'a')),
+        });
+        break;
+      }
+      default: {
+        break;
+      }
+    }
+  };
+
+  const play = () => {
+    if (selectedNodes.length !== 1) return;
+    playFrom(selectedNodes[0]);
+  };
 
   return (
     <>
-      {/* {!!playNode && (
+      {!!whatToPlay && (
         <PlayModeWrapper>
           <div>
             <CharacterPlayModeName>
-              {(selectedWorkspace?.characters &&
-                selectedWorkspace?.characters.find(
-                  (char) =>
-                    char.id === selectedChat?.nodes.find((node) => node.id === playNode)?.character
-                )?.name) ||
-                'No one'}{' '}
+              {characters &&
+                (characters.find((char) => char.id === whatToPlay.toShow.data.character) ||
+                  'No one')}{' '}
               said:
             </CharacterPlayModeName>
-            <p>{selectedChat?.nodes.find((node) => node.id === playNode)?.message}</p>
-            {selectedChat?.nodes
-              .filter((node) =>
-                selectedChat?.nodes.find((node) => node.id === playNode)?.goesTo.includes(node.id)
-              )
-              ?.map((node) => (
-                <Button
-                  key={node.id}
-                  onClick={() =>
-                    setPlayNode(node.type === CHAT_NODE_TEXT_TYPE ? node.id : node.goesTo[0])
-                  }
-                >
-                  {node.type === CHAT_NODE_TEXT_TYPE ? 'Next' : node.message}
+            <p>{whatToPlay.toShow.data.message}</p>
+            {whatToPlay.buttons.length > 0 ? (
+              whatToPlay.buttons.map((btn) => (
+                <Button key={btn.id} onClick={() => playFrom(btn)}>
+                  {btn.type === CHAT_NODE_TEXT_TYPE ? 'Next' : btn.data.message}
                 </Button>
-              ))}
-            {selectedChat?.nodes.find((node) => node.id === playNode)?.goesTo.length === 0 && (
-              <Button onClick={() => setPlayNode(null)}>Finish</Button>
+              ))
+            ) : (
+              <Button onClick={() => playFrom()}>Finish</Button>
             )}
           </div>
         </PlayModeWrapper>
-      )} */}
+      )}
       <WorkspacesWrapper>
         {workspacesNames.map((w) => (
           <FixedButton
@@ -463,7 +546,6 @@ const Story = () => {
         ))}
         <FixedButton icon={<FiPlus />} onClick={addWorkspace} add value="New workspace" />
         <FixedButton
-          icon={<FiPlus />}
           onClick={() => {
             localStorage.removeItem('data');
             // data.current = loadOrSave();
@@ -478,6 +560,7 @@ const Story = () => {
           add
           value={`${(zoom * 100).toFixed(0)}%`}
         />
+        {selectedNodes.length === 1 && <FixedButton onClick={play} add value="Play" />}
       </WorkspacesWrapper>
       {selectedWorkspace && (
         <ChatsWrapper>
