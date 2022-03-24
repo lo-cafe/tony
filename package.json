@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "prettier": "prettier 'src/**/*' --write --ignore-unknown"
+    "prettier": "prettier 'src/**/*' --write --ignore-unknown",
+    "postinstall": "patch-package"
   },
   "dependencies": {
     "@popperjs/core": "^2.11.4",
@@ -20,13 +21,11 @@
     "react-autowidth-input": "^1.0.5",
     "react-dom": "^17.0.2",
     "react-draggable": "^4.4.4",
-    "react-hook-form": "^7.27.1",
+    "react-flow-renderer": "^10.0.3",
     "react-icons": "^4.3.1",
     "react-popper": "^2.2.5",
-    "react-query": "^3.34.16",
     "react-router-dom": "^6.2.1",
     "react-transition-group": "^4.4.2",
-    "react-xarrows": "^2.0.2",
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
@@ -36,6 +35,8 @@
     "@types/styled-components": "^5.1.23",
     "@vitejs/plugin-react": "^1.0.7",
     "eslint": "^8.10.0",
+    "patch-package": "^6.4.7",
+    "postinstall-postinstall": "^2.1.0",
     "prettier": "^2.5.1",
     "typescript": "^4.5.4",
     "vite": "^2.8.0"

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import SelectableList from './SelectableList';
 import Popup from './Popup';
 
-const ContextMenuInjector = ({ isDragging, children, options }) => {
+const ContextMenuInjector = ({ children, options }) => {
   const [active, setActive] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const triggerRef = useRef(null);
@@ -17,7 +17,7 @@ const ContextMenuInjector = ({ isDragging, children, options }) => {
   };
   const handleOnClick = (func: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!func || isDragging) return;
+    if (!func) return;
     func();
   };
   return (
@@ -25,6 +25,7 @@ const ContextMenuInjector = ({ isDragging, children, options }) => {
       {React.cloneElement(children, {
         ref: triggerRef,
         onClick: handleOnClick(() => setActive(true)),
+        className: 'nodrag',
       })}
       <Popup
         placement="bottom-start"

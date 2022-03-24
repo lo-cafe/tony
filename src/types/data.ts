@@ -1,3 +1,5 @@
+import { Node, Edge } from 'react-flow-renderer';
+
 import {
   CHAT_NODE_CONDITION_TYPE,
   CHAT_NODE_ANSWER_TYPE,
@@ -6,18 +8,19 @@ import {
 
 export type ID = string;
 
-export type ChatNodeTypes = typeof CHAT_NODE_CONDITION_TYPE | typeof CHAT_NODE_ANSWER_TYPE | typeof CHAT_NODE_TEXT_TYPE;
+export type ChatNodeTypes =
+  | typeof CHAT_NODE_CONDITION_TYPE
+  | typeof CHAT_NODE_ANSWER_TYPE
+  | typeof CHAT_NODE_TEXT_TYPE;
 
-export interface ChatNode {
-  id: ID;
+export interface ChatNodeData {
   message: string;
-  type: ChatNodeTypes;
-  goesTo: ID[];
   character: ID | null;
   conditions?: ID[];
-  x: number;
-  y: number;
+  isCopy?: boolean;
 }
+
+export type ChatNode = Node<ChatNodeData>;
 
 export interface Character {
   id: ID;
@@ -29,6 +32,7 @@ export interface Chat {
   id: ID;
   name: string;
   nodes: ChatNode[];
+  edges: Edge[];
 }
 
 export interface Workspace {

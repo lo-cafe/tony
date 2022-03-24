@@ -1,10 +1,25 @@
-import { useEffect, useState, useRef, createRef, useCallback } from 'react';
-import styled, { css } from 'styled-components';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import styled, { css, keyframes } from 'styled-components';
 import { nanoid } from 'nanoid';
-import Xarrow, { useXarrow, Xwrapper } from 'react-xarrows';
 import cloneDeep from 'lodash/cloneDeep';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
 import { FiMessageSquare, FiList, FiPlus, FiBox, FiUser, FiHelpCircle } from 'react-icons/fi';
+import ReactFlow, {
+  addEdge,
+  FitViewOptions,
+  applyNodeChanges,
+  applyEdgeChanges,
+  Node,
+  Edge,
+  NodeChange,
+  EdgeChange,
+  useKeyPress,
+  MiniMap,
+  updateEdge,
+  Background,
+  useViewport,
+  ReactFlowInstance,
+} from 'react-flow-renderer';
 
 import {
   ID,
@@ -16,12 +31,16 @@ import {
   ChatNodeTypes,
 } from '~/types/data';
 
+import CustomEdge from '~/components/CustomEdge';
 import FixedButton from '~/components/FixedButton';
 import ChatNodeCard from '~/components/ChatNodeCard';
+import ConditionNodeCard from '~/components/ConditionNodeCard';
 import {
   CHAT_NODE_CONDITION_TYPE,
   CHAT_NODE_ANSWER_TYPE,
   CHAT_NODE_TEXT_TYPE,
+  ID_SIZE,
+  COLORS,
 } from '~/constants/variables';
 import downloadFile from '~/utils/downloadFile';
 import {
@@ -32,7 +51,13 @@ import {
   initialData,
 } from '~/constants/initialData';
 
-const IDS_SIZE = 8;
+interface MousePosition {
+  x: number;
+  y: number;
+}
+
+const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
+const edgeTypes = { button: CustomEdge };
 
 const loadOrSave = (data?: DataStructure): DataStructure => {
   if (typeof window === 'undefined') return initialData;
@@ -44,35 +69,36 @@ const loadOrSave = (data?: DataStructure): DataStructure => {
   return !storedData || !JSON.parse(storedData).length ? initialData : JSON.parse(storedData);
 };
 
-interface MousePosition {
-  x: number;
-  y: number;
-}
+const loadedData = loadOrSave();
 
 const Story = () => {
-  const updateXarrow = useXarrow();
-  const [data, setData] = useState<DataStructure>(loadOrSave());
+  const altPressed = useKeyPress('AltLeft');
+  const data = useRef<DataStructure>(loadedData);
+  const [workspacesNames, _setWorkspacesNames] = useState<Partial<Workspace>[]>(
+    data.current.map(({ id, name }) => ({ id, name }))
+  );
+  const [characters, setCharacters] = useState<Character[]>(data.current[0]?.characters);
+  const [chatsNames, _setChatsNames] = useState<Partial<Chat>[]>(
+    data.current[0]?.chats.map(({ id, name }) => ({ id, name }))
+  );
+  const [nodes, setNodes] = useState<ChatNode[]>(data.current[0]?.chats[0]?.nodes);
+  const [edges, setEdges] = useState<Edge[]>(data.current[0]?.chats[0]?.edges);
+  const { zoom } = useViewport();
 
-  const [grabbingMode, setGrabbingMode] = useState(false);
-  const [isGrabbing, _setIsGrabbing] = useState<MousePosition | null>(null);
-
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(null);
-  const [selectedChatId, setSelectedChatId] = useState<ID | null>(null);
-  const [selectedChatNodeId, setSelectedChatNodeId] = useState<ID | null>(null);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(loadedData[0].id);
+  const [selectedChatId, setSelectedChatId] = useState<ID | null>(loadedData[0].chats[0].id);
   const [playNode, setPlayNode] = useState<ID | null>(null);
+  const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
 
-  const [scale, setScale] = useState(0.9);
+  const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const reactFlowWrapper = useRef(null);
+  const lastCopied = useRef<null | Node>(null);
 
-  const [isDragging, setIsDragging] = useState(false);
-  const [addLinkMode, setAddLinkMode] = useState<ID | false>(false);
-  const [hoveredDeleteOption, setHoveredDeleteOption] = useState<ID | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const isGrabbingRef = useRef<MousePosition | null>(null);
+  const setChatsNames = (newChats: (old: Partial<Chat>[]) => Partial<Chat>[]) =>
+    _setChatsNames((old) => newChats(old).map(({ id, name }) => ({ id, name })));
 
-  const setIsGrabbing = (data: MousePosition | null) => {
-    isGrabbingRef.current = data;
-    _setIsGrabbing(data);
-  };
+  const setWorkspacesNames = (newWorkspaces: (old: Partial<Workspace>[]) => Partial<Workspace>[]) =>
+    _setWorkspacesNames((old) => newWorkspaces(old).map(({ id, name }) => ({ id, name })));
 
   const getSelectedWorkspace = (obj: DataStructure): Workspace | null =>
     obj.find((w) => w.id === selectedWorkspaceId) || null;
@@ -80,273 +106,176 @@ const Story = () => {
   const getSelectedChat = (obj: DataStructure): Chat | null =>
     getSelectedWorkspace(obj)?.chats.find((c) => c.id === selectedChatId) || null;
 
-  const getSelectedChatNode = (obj: DataStructure): ChatNode | null =>
-    getSelectedChat(obj)?.nodes.find((cn) => cn.id === selectedChatNodeId) || null;
+  const getRelatedEdges = (nodeId: ID, edges: Edge[]) =>
+    edges.filter((e) => e.source === nodeId || e.target === nodeId);
 
-  const selectedWorkspace = getSelectedWorkspace(data);
-  const selectedChat = getSelectedChat(data);
-  const selectedChatNode = getSelectedChatNode(data);
-
-  const removeLink = (originChatNodeId: ID, link: ID) => {
-    if (!selectedChat) return;
-    const dataCopy = cloneDeep(data);
-    const target = getSelectedChat(dataCopy)?.nodes.find((node) => node.id === originChatNodeId);
-    if (!target) return;
-    target.goesTo = target.goesTo.filter((i: ID) => i !== link);
-    setData(dataCopy);
-    setHoveredDeleteOption(null);
-  };
-
-  const addLink = (to: ID) => {
-    if (to === addLinkMode) return setAddLinkMode(false);
-    if (!selectedChat) return;
-    const dataCopy = cloneDeep(data);
-    getSelectedChat(dataCopy)
-      ?.nodes.find(({ id }) => id === addLinkMode)
-      ?.goesTo.push(to);
-    setData(dataCopy);
-    setAddLinkMode(false);
-  };
-
-  const addItem = (originChatNodeId: ID, type: ChatNodeTypes = CHAT_NODE_TEXT_TYPE) => {
-    const dataCopy = cloneDeep(data);
-    const selectedChatCopy = getSelectedChat(dataCopy);
-    const originNode = selectedChatCopy?.nodes.find((item) => item.id === originChatNodeId);
-    if (!originNode) return;
-
-    const newItem: ChatNode = {
-      ...initialChatNodeData(),
-      character: originNode.character,
-      x: originNode.x,
-      y: originNode.y + 180,
-    };
-
-    selectedChatCopy?.nodes.push(newItem);
-    originNode.goesTo.push(newItem.id);
-
-    setData(dataCopy);
-  };
-
-  const moveItem = (id: ID, x: number, y: number) => {
-    const dataCopy = cloneDeep(data);
-    const originNode = getSelectedChat(dataCopy)?.nodes.find((item) => item.id === id);
-    if (!originNode) return;
-    originNode.x = x;
-    originNode.y = y;
-    setData(dataCopy);
-  };
-
-  const deleteChatNode = (id: ID) => {
-    if (selectedChat?.nodes.length === 1) {
-      return alert('You cannot delete the last node of a chat.');
-    }
-    if (!window.confirm('Are you sure you want to delete this item?') || !selectedChat) return;
-    const dataCopy = cloneDeep(data);
-    const selectedChatCopy = getSelectedChat(dataCopy);
-    if (!selectedChatCopy) return;
-    selectedChatCopy.nodes = selectedChatCopy.nodes
-      .map((item) => ({ ...item, goesTo: item.goesTo.filter((i: ID) => i !== id) }))
-      .filter((item) => item.id !== id);
-    setData(dataCopy);
-  };
-
-  const onDrag = (id: ID, _e: DraggableEvent, info: DraggableData) => {
-    const { x: oldX, y: oldY } = selectedChat!.nodes.find((item) => item.id === id)!;
-    if (Math.abs(oldX - info.x) > 1 || Math.abs(oldY - info.y) > 1) {
-      setIsDragging(true);
-    }
-    updateXarrow();
-  };
-
-  const onDragEnd = (id: ID, _e: DraggableEvent, info: DraggableData) => {
-    moveItem(id, info.x, info.y);
-    updateXarrow();
-    setTimeout(() => {
-      setIsDragging(false);
-    }, 0);
-  };
-
-  const handleCardClick = (id: ID) => {
-    if (addLinkMode) {
-      addLink(id);
-    } else if (!isDragging) {
-      setSelectedChatNodeId(id === selectedChatNodeId ? null : id);
-    }
-  };
+  const selectedWorkspace = getSelectedWorkspace(data.current);
+  const selectedChat = getSelectedChat(data.current);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { value } = e.target;
-    if (!selectedChatNode) return;
-    const dataCopy = cloneDeep(data);
-    const selectedChatNodeCopy = getSelectedChatNode(dataCopy);
-    selectedChatNodeCopy!.message = value;
-    setData(dataCopy);
+    setNodes(
+      nodes.map((item) =>
+        item.selected
+          ? {
+              ...item,
+              data: {
+                ...item.data,
+                message: value,
+              },
+            }
+          : item
+      )
+    );
   };
 
   const changeType = (id: ID, type: ChatNodeTypes) => {
-    if (!selectedChatNode) return;
-    const dataCopy = cloneDeep(data);
-    const selectedChatNodeCopy = getSelectedChat(dataCopy)?.nodes.find((node) => node.id === id);
-    selectedChatNodeCopy!.type = type;
-    setData(dataCopy);
-  };
-
-  const unselect = () => {
-    setAddLinkMode(false);
-    setSelectedChatNodeId(null);
+    setNodes(
+      nodes.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              type,
+            }
+          : item
+      )
+    );
   };
 
   const deleteChat = (targetId: ID) => {
-    if (!targetId || !window.confirm('Are you sure you want to delete this item?')) return;
-    if (!selectedWorkspace) return;
-    const dataCopy = cloneDeep(data);
-    const selectedWorkspaceCopy = getSelectedWorkspace(dataCopy);
-    selectedWorkspaceCopy!.chats = selectedWorkspaceCopy!.chats.filter(({ id }) => id !== targetId);
-    setData(dataCopy);
+    if (
+      !selectedWorkspace ||
+      !targetId ||
+      !window.confirm('Are you sure you want to delete this item?')
+    )
+      return;
+    if (targetId === selectedChatId) setSelectedChatId(null);
+    _setChatsNames((old) => old.filter(({ id }) => id !== targetId));
   };
 
   const deleteWorkspace = (targetId: ID) => {
     if (!targetId || !window.confirm('Are you sure you want to delete this item?')) return;
-    const dataCopy = cloneDeep(data);
-    setData(dataCopy.filter(({ id }) => id !== targetId));
+    if (targetId === selectedWorkspaceId) {
+      setSelectedChatId(null);
+      setSelectedWorkspaceId(null);
+    }
+    _setWorkspacesNames((old) => old.filter(({ id }) => id !== targetId));
   };
 
   const deleteChar = (targetId: ID) => {
-    if (!window.confirm('Are you sure you want to delete this item?')) return;
-    if (!selectedWorkspace) return;
-    const dataCopy = cloneDeep(data);
-    const selectedWorkspaceCopy = getSelectedWorkspace(dataCopy);
-    selectedWorkspaceCopy!.characters = selectedWorkspaceCopy!.characters.filter(
-      (char) => char.id !== targetId
+    if (!selectedWorkspace || !window.confirm('Are you sure you want to delete this item?')) return;
+    setCharacters((old) => old.filter((char) => char.id !== targetId));
+    setNodes((old) =>
+      old.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          character: node.data.character === targetId ? null : node.data.character,
+        },
+      }))
     );
-    selectedWorkspaceCopy!.chats = selectedWorkspaceCopy!.chats.map((chat) => ({
-      ...chat,
-      nodes: chat.nodes.map((node) =>
-        node.character !== targetId ? node : { ...node, character: null }
-      ),
-    }));
-    setData(dataCopy);
   };
 
   const addChar = () => {
-    if (!selectedWorkspace) return;
-    const dataCopy = cloneDeep(data);
-    getSelectedWorkspace(dataCopy)!.characters.push(initialCharacterData());
-    setData(dataCopy);
+    setCharacters((old) => [...old, initialCharacterData()]);
   };
 
   const addChat = () => {
     if (!selectedWorkspace) return;
-    const dataCopy = cloneDeep(data);
-    getSelectedWorkspace(dataCopy)!.chats.push(initialChatData());
-    setData(dataCopy);
+    setChatsNames((old) => [...old, initialChatData()]);
   };
 
   const addWorkspace = () => {
-    const dataCopy = cloneDeep(data);
-    setData([...dataCopy, initialWorkspaceData()]);
+    setWorkspacesNames((old) => [...old, initialWorkspaceData()]);
   };
 
   const changeWorkspaceName = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dataCopy = cloneDeep(data);
-    console.log(e);
-    dataCopy.find((w) => w.id === e.target.name)!.name = e.target.value;
-    setData(dataCopy);
+    _setWorkspacesNames((old) =>
+      old.map((w) => (w.id === e.target.name ? { ...w, name: e.target.value } : w))
+    );
   };
 
   const changeChatName = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dataCopy = cloneDeep(data);
-    getSelectedWorkspace(dataCopy)!.chats.find((chat) => chat.id === e.target.name)!.name =
-      e.target.value;
-    setData(dataCopy);
+    _setChatsNames((old) =>
+      old.map((c) => (c.id === e.target.name ? { ...c, name: e.target.value } : c))
+    );
   };
 
   const changeCharName = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dataCopy = cloneDeep(data);
-    getSelectedWorkspace(dataCopy)!.characters.find((char) => char.id === e.target.name)!.name =
-      e.target.value;
-    setData(dataCopy);
+    setCharacters((old) =>
+      old.map(({ id, name }) =>
+        id === e.target.name ? { id, name: e.target.value } : { id, name }
+      )
+    );
   };
 
   const setCharacter = (targetId: ID, characterId: ID) => {
-    const dataCopy = cloneDeep(data);
-    const target = getSelectedChat(dataCopy)!.nodes.find((node) => node.id === targetId)!;
-    target.character = target.character === characterId ? null : characterId;
-    setData(dataCopy);
-  };
-
-  const onMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isGrabbingRef.current) document.removeEventListener('mousemove', onMouseMove);
-      if (!scrollRef.current) return;
-      const { scrollTop, scrollLeft } = scrollRef.current;
-      const newX = scrollLeft - e.movementX;
-      const newY = scrollTop - e.movementY;
-      scrollRef.current.scrollTo(newX, newY);
-    },
-    [scrollRef.current]
-  );
-
-  const onSpaceDown = (e: KeyboardEvent) => {
-    if (
-      document.activeElement?.tagName === 'INPUT' ||
-      document.activeElement?.tagName === 'TEXTAREA' ||
-      e.code !== 'Space'
-    )
-      return;
-    e.preventDefault();
-    setGrabbingMode(true);
-  };
-
-  const onSpaceUp = () => {
-    document.removeEventListener('mousemove', onMouseMove);
-    setGrabbingMode(false);
-  };
-
-  const startGrabbing = useCallback(({ screenX, screenY }: React.MouseEvent<HTMLDivElement>) => {
-    setIsGrabbing({ x: screenX, y: screenY });
-    document.addEventListener('mousemove', onMouseMove);
-  }, []);
-
-  const stopGrabbing = () => {
-    document.removeEventListener('mousemove', onMouseMove);
-    setIsGrabbing(null);
-  };
-
-  const zoom = (e: WheelEvent) => {
-    if (e.ctrlKey) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      console.log(e);
-    }
+    const previousCharacter = nodes.find((node) => node.id === targetId)?.data.character;
+    setNodes((old) =>
+      old.map((node) => {
+        if (node.id === targetId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              character: previousCharacter === characterId ? null : characterId,
+            },
+          };
+        }
+        return node;
+      })
+    );
   };
 
   useEffect(() => {
-    document.addEventListener('keydown', onSpaceDown);
-    document.addEventListener('keyup', onSpaceUp);
-    document.addEventListener('wheel', zoom);
-    return () => {
-      document.removeEventListener('keydown', onSpaceDown);
-      document.removeEventListener('keyup', onSpaceUp);
-      document.removeEventListener('wheel', zoom);
-    };
-  }, []);
+    if (!selectedChatId) return;
+    getSelectedChat(data.current)!.nodes = nodes;
+    loadOrSave(data.current);
+  }, [nodes]);
 
   useEffect(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.addEventListener('scroll', updateXarrow);
-    return () => {
-      if (!scrollRef.current) return;
-      scrollRef.current.removeEventListener('scroll', updateXarrow);
-    };
-  }, [scrollRef]);
+    if (!selectedChatId) return;
+    getSelectedChat(data.current)!.edges = edges;
+    loadOrSave(data.current);
+  }, [edges]);
 
   useEffect(() => {
-    loadOrSave(data);
-  }, [data]);
+    if (!selectedChatId) return;
+    getSelectedWorkspace(data.current)!.characters = characters;
+    loadOrSave(data.current);
+  }, [characters]);
+
+  useEffect(() => {
+    if (!selectedWorkspaceId) return;
+    const selectedWorkspaceChats = getSelectedWorkspace(data.current)!.chats;
+    getSelectedWorkspace(data.current)!.chats = chatsNames.map((c) =>
+      selectedWorkspaceChats.find(({ id }) => id === c.id)
+        ? { ...selectedWorkspaceChats.find(({ id }) => id === c.id), ...c }
+        : { ...initialChatData(), ...c }
+    ) as Chat[];
+    loadOrSave(data.current);
+  }, [chatsNames]);
+
+  useEffect(() => {
+    data.current = workspacesNames.map((w) =>
+      data.current.find(({ id }) => id === w.id)
+        ? {
+            ...data.current.find(({ id }) => id === w.id),
+            ...w,
+          }
+        : { ...initialWorkspaceData(), ...w }
+    ) as DataStructure;
+    loadOrSave(data.current);
+  }, [workspacesNames]);
+
+  useEffect(() => {
+    setChatsNames(() => getSelectedWorkspace(data.current)?.chats || []);
+    setNodes(selectedChatId ? getSelectedChat(data.current)!.nodes : []);
+    setEdges(selectedChatId ? getSelectedChat(data.current)!.edges : []);
+  }, [selectedChatId, selectedWorkspaceId]);
 
   const exportToJson = (id: ID) => {
-    const dataCopy = cloneDeep(data);
+    const dataCopy = cloneDeep(data.current);
     const target = dataCopy.find((x) => x.id === id);
     if (!target) return;
     downloadFile({
@@ -356,16 +285,136 @@ const Story = () => {
     });
   };
 
-  const play = (id: ID) => {
-    const dataCopy = getSelectedChat(cloneDeep(data));
-    const target = dataCopy?.nodes.find((x) => x.id === id);
-    if (!target || target.type !== CHAT_NODE_TEXT_TYPE) return;
-    setPlayNode(id);
+  // const play = (id: ID) => {
+  //   const dataCopy = getSelectedChat(cloneDeep(data));
+  //   const target = dataCopy?.nodes.find((x) => x.id === id);
+  //   if (!target || target.type !== CHAT_NODE_TEXT_TYPE) return;
+  //   setPlayNode(id);
+  // };
+
+  const onNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    [setNodes]
+  );
+  const onEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [setEdges]
+  );
+  const onConnect = useCallback(
+    (connection) =>
+      setEdges((eds) => addEdge({ ...connection, type: 'button', animated: true }, eds)),
+    [setEdges]
+  );
+  const removeEdge = useCallback(
+    (edgeId) => setEdges((eds) => eds.filter((e) => e.id !== edgeId)),
+    [setEdges]
+  );
+  const onEdgeUpdate = useCallback(
+    (oldEdge, newConnection) => setEdges((els) => updateEdge(oldEdge, newConnection, els)),
+    [setEdges]
+  );
+  const onNodeDragStart = useCallback(
+    (e: React.MouseEvent, node: ChatNode) => {
+      if (!altPressed) return true;
+      lastCopied.current = node;
+      const newNodeId = nanoid(ID_SIZE);
+      setNodes((nds) => [
+        ...nds.map((nd) => ({ ...nd, selected: false })),
+        {
+          ...node,
+          selected: true,
+          id: newNodeId,
+          data: {
+            ...node.data,
+            isCopy: true,
+          },
+        },
+      ]);
+      const relatedEdges = getRelatedEdges(node.id, edges).map((e) => ({
+        ...e,
+        id: nanoid(ID_SIZE),
+        source: e.source === node.id ? newNodeId : e.source,
+        target: e.target === node.id ? newNodeId : e.target,
+      }));
+      setEdges((eds) => [...eds, ...relatedEdges]);
+      return true;
+    },
+    [altPressed, setNodes]
+  );
+
+  const onNodeDrag = useCallback(
+    (e: React.MouseEvent, node: ChatNode) => {
+      if (!altPressed || !lastCopied.current) return;
+      setNodes((nds) =>
+        nds.map((nd) =>
+          nd.id === lastCopied.current!.id
+            ? {
+                ...nd,
+                data: {
+                  ...nd.data,
+                  isCopy: false,
+                },
+                position: { x: lastCopied.current!.position.x, y: lastCopied.current!.position.y },
+              }
+            : nd
+        )
+      );
+      return true;
+    },
+    [altPressed, setNodes]
+  );
+  const onNodeDragStop = useCallback(
+    (e: React.MouseEvent, node: ChatNode) => {
+      lastCopied.current = null;
+      if (!altPressed) return true;
+      setNodes((nds) =>
+        nds.map((nd) =>
+          nd.selected
+            ? { ...nd, data: { ...nd.data, isCopy: false } }
+            : { ...nd, selected: false, draggable: true }
+        )
+      );
+      return true;
+    },
+    [altPressed, setNodes]
+  );
+
+  useEffect(() => {
+    if (!altPressed) {
+      setNodes((nds) => nds.filter((nd) => !nd.data.isCopy));
+    }
+  }, [altPressed]);
+
+  const onStartDragToAddNewNode = () => {
+    setTimeout(() => {
+      setIsAddingNewNode(true);
+    }, 150);
   };
+
+  const onEndDragToAddNewNode = (_e: DraggableEvent, info: DraggableData) => {
+    if (!reactFlowInstance) return;
+    setIsAddingNewNode('ending');
+    setTimeout(() => {
+      setIsAddingNewNode(false);
+    }, 1);
+    const newNode = initialChatNodeData();
+    newNode.position = reactFlowInstance.project({ x: info.x - 140, y: info.y + 340 });
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const setWorkspace = (id: ID) => {
+    setSelectedWorkspaceId(id);
+    const firstChat = data.current.find((x) => x.id === id)?.chats[0];
+    setSelectedChatId(firstChat ? firstChat.id : null);
+  };
+
+  const selectedNodes = useMemo(() => nodes.filter((x) => x.selected), [nodes]);
+
+  // console.log(edges)
 
   return (
     <>
-      {!!playNode && (
+      {/* {!!playNode && (
         <PlayModeWrapper>
           <div>
             <CharacterPlayModeName>
@@ -397,33 +446,47 @@ const Story = () => {
             )}
           </div>
         </PlayModeWrapper>
-      )}
-      {/* {grabbingMode && ( */}
-      {/* )} */}
+      )} */}
       <WorkspacesWrapper>
-        {data.map((w) => (
+        {workspacesNames.map((w) => (
           <FixedButton
             key={w.id}
             icon={<FiBox />}
             data={w.id}
-            value={w.name}
+            value={w.name!}
             selected={w.id === selectedWorkspaceId}
-            onClick={setSelectedWorkspaceId}
+            onClick={setWorkspace}
             onValueChange={changeWorkspaceName}
             onDownload={exportToJson}
             onDelete={deleteWorkspace}
           />
         ))}
         <FixedButton icon={<FiPlus />} onClick={addWorkspace} add value="New workspace" />
+        <FixedButton
+          icon={<FiPlus />}
+          onClick={() => {
+            localStorage.removeItem('data');
+            // data.current = loadOrSave();
+          }}
+          add
+          value="Erase"
+        />
+        <FixedButton
+          onClick={() => {
+            reactFlowInstance!.zoomTo(1);
+          }}
+          add
+          value={`${(zoom * 100).toFixed(0)}%`}
+        />
       </WorkspacesWrapper>
       {selectedWorkspace && (
         <ChatsWrapper>
-          {selectedWorkspace.chats.map((chat) => (
+          {chatsNames.map((chat) => (
             <FixedButton
               key={chat.id}
               icon={<FiMessageSquare />}
               data={chat.id}
-              value={chat.name}
+              value={chat.name!}
               selected={chat.id === selectedChatId}
               onClick={setSelectedChatId}
               onValueChange={changeChatName}
@@ -435,7 +498,7 @@ const Story = () => {
       )}
       {selectedWorkspace && (
         <CharactersWrapper>
-          {selectedWorkspace.characters.map((char) => (
+          {characters.map((char) => (
             <FixedButton
               key={char.id}
               icon={<FiUser />}
@@ -448,126 +511,162 @@ const Story = () => {
           <FixedButton icon={<FiPlus />} onClick={addChar} add value="New character" />
         </CharactersWrapper>
       )}
-      {selectedChatNode && (
-        <SidePanel>
+      {selectedNodes.length === 1 && (
+        <SidePanel color={COLORS[selectedNodes[0].type as ChatNodeTypes]}>
           <SidePanelContent>
             <ItemTitleBar>
               <ItemTitle>
-                {selectedChatNode.type === CHAT_NODE_TEXT_TYPE ? <FiMessageSquare /> : <FiList />}
-                {selectedChatNode.type}
+                {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE ? <FiMessageSquare /> : <FiList />}
+                {selectedNodes[0].type}
               </ItemTitle>
-              <IdTag>{selectedChatNode.id}</IdTag>
+              <IdTag>{selectedNodes[0].id}</IdTag>
             </ItemTitleBar>
             <TypeChooserWrapper>
               <TypeChooser
-                onClick={() => changeType(selectedChatNodeId!, CHAT_NODE_TEXT_TYPE)}
-                selected={selectedChatNode.type === CHAT_NODE_TEXT_TYPE}
+                onClick={() => changeType(selectedNodes[0].id, CHAT_NODE_TEXT_TYPE)}
+                selected={selectedNodes[0].type === CHAT_NODE_TEXT_TYPE}
               >
                 <FiMessageSquare />
                 <span>Text</span>
               </TypeChooser>
               <TypeChooser
-                onClick={() => changeType(selectedChatNodeId!, CHAT_NODE_ANSWER_TYPE)}
-                selected={selectedChatNode.type === CHAT_NODE_ANSWER_TYPE}
+                onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_ANSWER_TYPE)}
+                selected={selectedNodes[0].type === CHAT_NODE_ANSWER_TYPE}
               >
                 <FiList />
                 <span>Answer</span>
               </TypeChooser>
               <TypeChooser
-                onClick={() => changeType(selectedChatNodeId!, CHAT_NODE_CONDITION_TYPE)}
-                selected={selectedChatNode.type === CHAT_NODE_CONDITION_TYPE}
+                onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_CONDITION_TYPE)}
+                selected={selectedNodes[0].type === CHAT_NODE_CONDITION_TYPE}
               >
                 <FiHelpCircle />
                 <span>Condition</span>
               </TypeChooser>
             </TypeChooserWrapper>
-            <Textarea
-              onChange={handleInputChange}
-              name="message"
-              value={selectedChatNode.message}
-            />
+            {selectedNodes[0].type !== CHAT_NODE_CONDITION_TYPE && (
+              <Textarea
+                onChange={handleInputChange}
+                name="message"
+                value={selectedNodes[0].data.message}
+              />
+            )}
           </SidePanelContent>
-          <div>
-            {selectedChatNode.type === CHAT_NODE_TEXT_TYPE && (
+          {/* <div>
+            {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE && (
               <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
             )}
-            <Button red onClick={() => deleteChatNode(selectedChatNodeId!)}>
-              Delete
-            </Button>
-          </div>
+          </div> */}
         </SidePanel>
       )}
-      <ExternalWrapper onClick={unselect} ref={scrollRef}>
-        <Grabber
-          grabMode={grabbingMode}
-          grabbing={!!isGrabbing}
-          onMouseDown={startGrabbing}
-          onMouseUp={stopGrabbing}
-        />
-        <Wrapper style={{ transform: `scale(${scale})` }}>
-          {selectedWorkspace && selectedChat && selectedChat && (
-            <Xwrapper>
-              {selectedChat.nodes.map((item, i) => (
-                <Draggable
-                  defaultPosition={{ x: item.x, y: item.y }}
-                  position={{ x: item.x, y: item.y }}
-                  scale={1}
-                  key={item.id}
-                  onDrag={(...rest) => onDrag(item.id, ...rest)}
-                  onStop={(...rest) => onDragEnd(item.id, ...rest)}
-                  handle=".handler"
-                >
-                  <CardHandler className="handler">
-                    <ChatNodeCard
-                      characters={selectedWorkspace.characters}
-                      setCharacter={setCharacter}
-                      setHoveredDeleteOption={setHoveredDeleteOption}
-                      addItem={addItem}
-                      isDragging={isDragging}
-                      selected={selectedChatNodeId === item.id}
-                      fadedOut={
-                        (addLinkMode && addLinkMode !== item.id) ||
-                        (!!hoveredDeleteOption && hoveredDeleteOption !== item.id)
-                      }
-                      onCardClick={() => handleCardClick(item.id)}
-                      removeLink={removeLink}
-                      setAddLinkMode={setAddLinkMode}
-                      item={item}
-                    />
-                  </CardHandler>
-                </Draggable>
-              ))}
-              {selectedChat.nodes.map((item, i) =>
-                item.goesTo.map((goingTo) => (
-                  <Xarrow
-                    SVGcanvasStyle={{ transform: `scale(${scale})` }}
-                    dashness
-                    headSize={4}
-                    zIndex={
-                      selectedChatNodeId === item.id || hoveredDeleteOption === goingTo ? 1 : 0
-                    }
-                    color={
-                      selectedChatNodeId === item.id || hoveredDeleteOption === goingTo
-                        ? '#0068f6'
-                        : '#91b1df'
-                    }
-                    headShape="circle"
-                    key={nanoid()}
-                    start={item.id}
-                    end={goingTo}
-                    curveness={0.8}
-                  />
-                ))
-              )}
-            </Xwrapper>
-          )}
-        </Wrapper>
-      </ExternalWrapper>
+      {!!selectedChat && (
+        <StyledReactFlow
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          nodes={nodes.map((node) => ({
+            ...node,
+            data: {
+              ...node.data,
+              setCharacter,
+              characters: characters,
+            },
+          }))}
+          edges={edges.map((edge) => ({
+            ...edge,
+            data: {
+              ...edge.data,
+              removeEdge,
+            },
+          }))}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onEdgeUpdate={onEdgeUpdate}
+          onNodeDragStart={onNodeDragStart}
+          onNodeDrag={onNodeDrag}
+          onNodeDragStop={onNodeDragStop}
+          onInit={setReactFlowInstance}
+          onConnect={onConnect}
+          minZoom={0.1}
+          maxZoom={4}
+        >
+          <MiniMap />
+          <Background />
+          {/* <Controls /> */}
+        </StyledReactFlow>
+      )}
+      <div ref={reactFlowWrapper}>
+        <Draggable
+          position={{ x: 0, y: 0 }}
+          scale={1}
+          onStart={onStartDragToAddNewNode}
+          // onDrag={this.handleDrag}
+          onStop={onEndDragToAddNewNode}
+        >
+          <CardAdd isAddingNewNode={isAddingNewNode}>
+            <ChatNodeCard
+              position={{ x: 0, y: 0 }}
+              connectable={false}
+              id="addNode"
+              data={{
+                message: 'Add me!',
+                character: null,
+              }}
+            />
+          </CardAdd>
+        </Draggable>
+      </div>
     </>
   );
 };
 
 export default Story;
+
+const lol = keyframes`
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.2);
+  }
+`;
+
+const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
+  position: fixed;
+  top: 300px;
+  left: ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? '-185px' : '-110px')};
+  z-index: 99999;
+  opacity: 0.6;
+  transition: opacity 150ms ease-out,
+    left ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? 0 : 400)}ms
+      cubic-bezier(0.23, 1.48, 0.325, 0.945);
+  height: 250px;
+  width: 170px;
+  padding-top: 40px;
+  ${({ isAddingNewNode }) =>
+    isAddingNewNode !== 'ending' &&
+    css`
+      &:hover {
+        opacity: 0.8;
+        left: -100px;
+      }
+    `}
+  &.react-draggable-dragging {
+    & > * {
+      transform: rotate(0deg);
+    }
+  }
+  & > * {
+    margin-left: -40px;
+    transition: ${({ isAddingNewNode }) =>
+      isAddingNewNode ? 'none' : 'transform 200ms ease-out'} !important;
+    transform: rotate(90deg);
+  }
+`;
+
+const StyledReactFlow = styled(ReactFlow)`
+  width: 100%;
+  height: 100vh;
+`;
 
 const PlayModeWrapper = styled.div`
   position: fixed;
@@ -595,24 +694,12 @@ const CharacterPlayModeName = styled.div`
   font-weight: bold;
 `;
 
-const Grabber = styled.div<{ grabbing?: boolean }>`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  z-index: ${({ grabMode }) => (grabMode ? 10 : 0)};
-  cursor: ${({ grabbing }) => (grabbing ? 'grabbing' : 'grab')};
-`;
-
 const WorkspacesWrapper = styled.div`
   display: flex;
   position: fixed;
   top: 25px;
   left: 25px;
-  z-index: 3;
+  z-index: 9;
   gap: 8px;
   color: #424242;
 `;
@@ -668,14 +755,14 @@ const TypeChooser = styled.button<{ selected: boolean }>`
   cursor: pointer;
   font-sizs: 14px;
   font-weight: 600;
-  color: ${({ selected }) => (selected ? '#0068f6' : 'gray')};
+  ${({ selected }) =>
+    !selected &&
+    css`
+      color: gray !important;
+    `};
   &:hover {
     background: #e3e3e3;
   }
-`;
-
-const CardHandler = styled.div`
-  pointer-events: all;
 `;
 
 const SidePanelContent = styled.div`
@@ -683,24 +770,6 @@ const SidePanelContent = styled.div`
   flex-direction: column;
   gap: 16px;
   flex: 1;
-`;
-
-const SidePanel = styled.div`
-  position: fixed;
-  height: calc(100vh - 50px);
-  width: 400px;
-  top: 25px;
-  right: 25px;
-  background: rgba(255, 255, 255, 0.7);
-  padding: 25px;
-  border-radius: 24px;
-  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  border: solid 1px rgba(255, 255, 255, 0.9);
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  backdrop-filter: blur(40px);
 `;
 
 const Textarea = styled.textarea`
@@ -714,21 +783,6 @@ const Textarea = styled.textarea`
   font-family: inherit;
   resize: vertical;
   min-height: 200px;
-`;
-
-const ExternalWrapper = styled.div`
-  width: 100vw;
-  height: 100vh;
-  overflow: auto;
-  background-color: #fafafa;
-`;
-
-const Wrapper = styled.div`
-  height: 10000px;
-  width: 10000px;
-  position: relative;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='6' height='6' viewBox='0 0 6 6' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23000000' fill-opacity='0.11' fill-rule='evenodd'%3E%3Cpath d='M5 0h1L0 6V5zM6 5v1H5z'/%3E%3C/g%3E%3C/svg%3E");
 `;
 
 const ItemTitleBar = styled.div`
@@ -764,6 +818,32 @@ const IdTag = styled.div`
   align-items: center;
   justify-content: center;
   white-space: nowrap;
+`;
+
+const SidePanel = styled.div<{ color: string }>`
+  position: fixed;
+  width: 360px;
+  top: 25px;
+  right: 25px;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 25px;
+  border-radius: 24px;
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  border: solid 1px rgba(255, 255, 255, 0.9);
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  backdrop-filter: blur(40px);
+  ${ItemTitleBar} {
+    background: ${({ color }) => color};
+  }
+  ${IdTag} {
+    color: ${({ color }) => color};
+  }
+  ${TypeChooser} {
+    color: ${({ color }) => color};
+  }
 `;
 
 const GoingToPanel = styled.div`

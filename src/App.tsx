@@ -1,16 +1,15 @@
 import { BrowserRouter, Routes, Navigate, Route } from 'react-router-dom';
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
-import { QueryClient, QueryClientProvider } from 'react-query';
+
+import { ReactFlowProvider } from 'react-flow-renderer';
 
 import Story from '~/pages/Story';
 
-const queryClient = new QueryClient();
-
 const App = () => (
-  <div>
+  <ReactFlowProvider>
     <GlobalStyles />
     <Story />
-  </div>
+  </ReactFlowProvider>
 );
 
 export default App;

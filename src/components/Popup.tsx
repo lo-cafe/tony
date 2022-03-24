@@ -40,7 +40,7 @@ const Popup = ({ children, referenceElement, active, popupRef, onCloseAreaClick,
       <>
          {createPortal(
             <Transition in={active} timeout={200} unmountOnExit mountOnEnter appear>
-               {() => <CloseArea onClick={onCloseAreaClick} />}
+               {() => <CloseArea className="nodrag" onClick={onCloseAreaClick} />}
             </Transition>,
             document.body
          )}
@@ -54,7 +54,7 @@ const Popup = ({ children, referenceElement, active, popupRef, onCloseAreaClick,
                appear
             >
                {(state) => (
-                  <Wrapper state={state} ref={popperRef} style={styles.popper} {...attributes.popper}>
+                  <Wrapper className="nodrag" state={state} ref={popperRef} style={styles.popper} {...attributes.popper}>
                      {children}
                   </Wrapper>
                )}
