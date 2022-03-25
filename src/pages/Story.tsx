@@ -3,7 +3,16 @@ import styled, { css, keyframes } from 'styled-components';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash/cloneDeep';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
-import { FiMessageSquare, FiList, FiPlus, FiBox, FiUser, FiHelpCircle } from 'react-icons/fi';
+import {
+  FiMessageSquare,
+  FiList,
+  FiPlus,
+  FiBox,
+  FiUser,
+  FiHelpCircle,
+  FiPlay,
+  FiTrash2,
+} from 'react-icons/fi';
 import ReactFlow, {
   addEdge,
   FitViewOptions,
@@ -19,6 +28,7 @@ import ReactFlow, {
   Background,
   useViewport,
   ReactFlowInstance,
+  useUpdateNodeInternals,
 } from 'react-flow-renderer';
 
 import {
@@ -73,6 +83,7 @@ const loadedData = loadOrSave();
 
 const Story = () => {
   const altPressed = useKeyPress('AltLeft');
+  const updateNodeInternals = useUpdateNodeInternals();
   const data = useRef<DataStructure>(loadedData);
   const [workspacesNames, _setWorkspacesNames] = useState<Partial<Workspace>[]>(
     data.current.map(({ id, name }) => ({ id, name }))
@@ -146,7 +157,12 @@ const Story = () => {
           : item
       )
     );
+    if (type === CHAT_NODE_CONDITION_TYPE)
+      setEdges(edges.filter((edg) => edg.source !== id && edg.target !== id));
+    updateNodeInternals(id);
   };
+
+  // console.log(nodes)
 
   const deleteChat = (targetId: ID) => {
     if (
@@ -320,8 +336,9 @@ const Story = () => {
     [setEdges]
   );
   const onNodeDragStart = useCallback(
-    (e: React.MouseEvent, node: ChatNode) => {
+    (e: React.MouseEvent, rawNode: ChatNode) => {
       if (!altPressed) return true;
+      const node = nodes.find((nd) => nd.id === rawNode.id)!;
       lastCopied.current = node;
       const newNodeId = nanoid(ID_SIZE);
       setNodes((nds) => [
@@ -508,6 +525,147 @@ const Story = () => {
 
   return (
     <>
+      <OverlayWrapper>
+        <OTopLeft>
+          <>
+            {workspacesNames.map((w) => (
+              <FixedButton
+                key={w.id}
+                icon={<FiBox />}
+                data={w.id}
+                value={w.name!}
+                selected={w.id === selectedWorkspaceId}
+                onClick={setWorkspace}
+                onValueChange={changeWorkspaceName}
+                onDownload={exportToJson}
+                onDelete={deleteWorkspace}
+              />
+            ))}
+            <FixedButton
+              icon={<FiPlus />}
+              onClick={addWorkspace}
+              color="add"
+              value="New workspace"
+            />
+          </>
+        </OTopLeft>
+        <OTopLeftUnder>
+          {selectedWorkspace && (
+            <>
+              {characters.map((char) => (
+                <FixedButton
+                  key={char.id}
+                  icon={<FiUser />}
+                  data={char.id}
+                  value={char.name}
+                  onValueChange={changeCharName}
+                  onDelete={deleteChar}
+                />
+              ))}
+              <FixedButton icon={<FiPlus />} onClick={addChar} color="add" value="New character" />
+            </>
+          )}
+        </OTopLeftUnder>
+        <OTopRight>
+          <FixedButton
+            disabled={selectedNodes.length !== 1}
+            icon={<FiPlay />}
+            onClick={play}
+            color="add"
+            value="Play"
+          />
+          <FixedButton
+            onClick={() => {
+              if (!window.confirm('Are you really sure?')) return;
+              localStorage.removeItem('data');
+              data.current = loadOrSave();
+            }}
+            color="delete"
+            icon={<FiTrash2 />}
+            value="Erase all data"
+          />
+          <FixedButton
+            onClick={() => {
+              reactFlowInstance!.zoomTo(1);
+            }}
+            color="add"
+            value={`${(zoom * 100).toFixed(0)}%`}
+          />
+        </OTopRight>
+        <OTopRightUnder>
+          {selectedNodes.length === 1 && (
+            <SidePanel color={COLORS[selectedNodes[0].type as ChatNodeTypes]}>
+              <SidePanelContent>
+                <ItemTitleBar>
+                  <ItemTitle>
+                    {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE ? (
+                      <FiMessageSquare />
+                    ) : (
+                      <FiList />
+                    )}
+                    {selectedNodes[0].type}
+                  </ItemTitle>
+                  <IdTag>{selectedNodes[0].id}</IdTag>
+                </ItemTitleBar>
+                <TypeChooserWrapper>
+                  <TypeChooser
+                    onClick={() => changeType(selectedNodes[0].id, CHAT_NODE_TEXT_TYPE)}
+                    selected={selectedNodes[0].type === CHAT_NODE_TEXT_TYPE}
+                  >
+                    <FiMessageSquare />
+                    <span>Text</span>
+                  </TypeChooser>
+                  <TypeChooser
+                    onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_ANSWER_TYPE)}
+                    selected={selectedNodes[0].type === CHAT_NODE_ANSWER_TYPE}
+                  >
+                    <FiList />
+                    <span>Answer</span>
+                  </TypeChooser>
+                  <TypeChooser
+                    onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_CONDITION_TYPE)}
+                    selected={selectedNodes[0].type === CHAT_NODE_CONDITION_TYPE}
+                  >
+                    <FiHelpCircle />
+                    <span>Condition</span>
+                  </TypeChooser>
+                </TypeChooserWrapper>
+                {selectedNodes[0].type !== CHAT_NODE_CONDITION_TYPE && (
+                  <Textarea
+                    onChange={handleInputChange}
+                    name="message"
+                    value={selectedNodes[0].data.message}
+                  />
+                )}
+              </SidePanelContent>
+              {/* <div>
+            {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE && (
+              <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
+            )}
+          </div> */}
+            </SidePanel>
+          )}
+        </OTopRightUnder>
+        <OBottomLeft>
+          {selectedWorkspace && (
+            <>
+              {chatsNames.map((chat) => (
+                <FixedButton
+                  key={chat.id}
+                  icon={<FiMessageSquare />}
+                  data={chat.id}
+                  value={chat.name!}
+                  selected={chat.id === selectedChatId}
+                  onClick={setSelectedChatId}
+                  onValueChange={changeChatName}
+                  onDelete={deleteChat}
+                />
+              ))}
+              <FixedButton icon={<FiPlus />} onClick={addChat} color="add" value="New chat" />
+            </>
+          )}
+        </OBottomLeft>
+      </OverlayWrapper>
       {!!whatToPlay && (
         <PlayModeWrapper>
           <div>
@@ -529,118 +687,6 @@ const Story = () => {
             )}
           </div>
         </PlayModeWrapper>
-      )}
-      <WorkspacesWrapper>
-        {workspacesNames.map((w) => (
-          <FixedButton
-            key={w.id}
-            icon={<FiBox />}
-            data={w.id}
-            value={w.name!}
-            selected={w.id === selectedWorkspaceId}
-            onClick={setWorkspace}
-            onValueChange={changeWorkspaceName}
-            onDownload={exportToJson}
-            onDelete={deleteWorkspace}
-          />
-        ))}
-        <FixedButton icon={<FiPlus />} onClick={addWorkspace} add value="New workspace" />
-        <FixedButton
-          onClick={() => {
-            localStorage.removeItem('data');
-            // data.current = loadOrSave();
-          }}
-          add
-          value="Erase"
-        />
-        <FixedButton
-          onClick={() => {
-            reactFlowInstance!.zoomTo(1);
-          }}
-          add
-          value={`${(zoom * 100).toFixed(0)}%`}
-        />
-        {selectedNodes.length === 1 && <FixedButton onClick={play} add value="Play" />}
-      </WorkspacesWrapper>
-      {selectedWorkspace && (
-        <ChatsWrapper>
-          {chatsNames.map((chat) => (
-            <FixedButton
-              key={chat.id}
-              icon={<FiMessageSquare />}
-              data={chat.id}
-              value={chat.name!}
-              selected={chat.id === selectedChatId}
-              onClick={setSelectedChatId}
-              onValueChange={changeChatName}
-              onDelete={deleteChat}
-            />
-          ))}
-          <FixedButton icon={<FiPlus />} onClick={addChat} add value="New chat" />
-        </ChatsWrapper>
-      )}
-      {selectedWorkspace && (
-        <CharactersWrapper>
-          {characters.map((char) => (
-            <FixedButton
-              key={char.id}
-              icon={<FiUser />}
-              data={char.id}
-              value={char.name}
-              onValueChange={changeCharName}
-              onDelete={deleteChar}
-            />
-          ))}
-          <FixedButton icon={<FiPlus />} onClick={addChar} add value="New character" />
-        </CharactersWrapper>
-      )}
-      {selectedNodes.length === 1 && (
-        <SidePanel color={COLORS[selectedNodes[0].type as ChatNodeTypes]}>
-          <SidePanelContent>
-            <ItemTitleBar>
-              <ItemTitle>
-                {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE ? <FiMessageSquare /> : <FiList />}
-                {selectedNodes[0].type}
-              </ItemTitle>
-              <IdTag>{selectedNodes[0].id}</IdTag>
-            </ItemTitleBar>
-            <TypeChooserWrapper>
-              <TypeChooser
-                onClick={() => changeType(selectedNodes[0].id, CHAT_NODE_TEXT_TYPE)}
-                selected={selectedNodes[0].type === CHAT_NODE_TEXT_TYPE}
-              >
-                <FiMessageSquare />
-                <span>Text</span>
-              </TypeChooser>
-              <TypeChooser
-                onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_ANSWER_TYPE)}
-                selected={selectedNodes[0].type === CHAT_NODE_ANSWER_TYPE}
-              >
-                <FiList />
-                <span>Answer</span>
-              </TypeChooser>
-              <TypeChooser
-                onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_CONDITION_TYPE)}
-                selected={selectedNodes[0].type === CHAT_NODE_CONDITION_TYPE}
-              >
-                <FiHelpCircle />
-                <span>Condition</span>
-              </TypeChooser>
-            </TypeChooserWrapper>
-            {selectedNodes[0].type !== CHAT_NODE_CONDITION_TYPE && (
-              <Textarea
-                onChange={handleInputChange}
-                name="message"
-                value={selectedNodes[0].data.message}
-              />
-            )}
-          </SidePanelContent>
-          {/* <div>
-            {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE && (
-              <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
-            )}
-          </div> */}
-        </SidePanel>
       )}
       {!!selectedChat && (
         <StyledReactFlow
@@ -672,7 +718,10 @@ const Story = () => {
           minZoom={0.1}
           maxZoom={4}
         >
-          <MiniMap />
+          <StyledMiniMap
+            nodeBorderRadius={16}
+            nodeColor={(node: ChatNode) => COLORS[node.type as ChatNodeTypes]}
+          />
           <Background />
           {/* <Controls /> */}
         </StyledReactFlow>
@@ -703,6 +752,59 @@ const Story = () => {
 };
 
 export default Story;
+
+const StyledMiniMap = styled(MiniMap)`
+  border-radius: 16px;
+`;
+
+const OverlayWrapper = styled.div`
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 10px 10px;
+  grid-auto-flow: row;
+  grid-template-areas:
+    'topLeft . topRight'
+    'topLeftUnder . topRightUnder'
+    '. . .'
+    'bottomLeft . .';
+  z-index: 9;
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  pointer-events: none;
+  padding: 16px;
+  & > * {
+    pointer-events: all;
+  }
+`;
+
+const OArea = styled.div`
+  display: flex;
+  gap: 8px;
+  color: #424242;
+  align-items: flex-start;
+  justify-content: flex-start;
+`;
+
+const OTopLeft = styled(OArea)`
+  grid-area: topLeft;
+`;
+const OTopLeftUnder = styled(OArea)`
+  grid-area: topLeftUnder;
+`;
+const OTopRight = styled(OArea)`
+  grid-area: topRight;
+  justify-content: flex-end;
+`;
+const OTopRightUnder = styled(OArea)`
+  grid-area: topRightUnder;
+  justify-content: flex-end;
+`;
+const OBottomLeft = styled(OArea)`
+  grid-area: bottomLeft;
+  align-items: flex-end;
+`;
 
 const lol = keyframes`
   0% {
@@ -775,25 +877,6 @@ const PlayModeWrapper = styled.div`
 
 const CharacterPlayModeName = styled.div`
   font-weight: bold;
-`;
-
-const WorkspacesWrapper = styled.div`
-  display: flex;
-  position: fixed;
-  top: 25px;
-  left: 25px;
-  z-index: 9;
-  gap: 8px;
-  color: #424242;
-`;
-
-const ChatsWrapper = styled(WorkspacesWrapper)`
-  top: unset;
-  bottom: 25px;
-`;
-
-const CharactersWrapper = styled(WorkspacesWrapper)`
-  top: 75px;
 `;
 
 const Button = styled.button<{ red?: boolean }>`
@@ -904,10 +987,7 @@ const IdTag = styled.div`
 `;
 
 const SidePanel = styled.div<{ color: string }>`
-  position: fixed;
   width: 360px;
-  top: 25px;
-  right: 25px;
   background: rgba(255, 255, 255, 0.7);
   padding: 25px;
   border-radius: 24px;
@@ -926,6 +1006,11 @@ const SidePanel = styled.div<{ color: string }>`
   }
   ${TypeChooser} {
     color: ${({ color }) => color};
+  }
+  -webkit-user-drag: none;
+  & * {
+    user-select: none;
+    -webkit-user-drag: none;
   }
 `;
 

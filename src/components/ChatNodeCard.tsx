@@ -238,6 +238,11 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   & ${TargetHandle}::after {
     background-image: url(${({ cardType }) => (cardType === 'answer' ? laceOrange : lace)});
   }
+  -webkit-user-drag: none;
+  & * {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
   &::after {
     content: '';
     position: absolute;

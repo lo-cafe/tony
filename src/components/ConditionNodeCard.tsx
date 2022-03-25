@@ -209,6 +209,12 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
   transition: box-shadow 300ms ease-out, opacity 300ms ease-out;
   opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
   animation: ${putInPlace} 1s ease-out;
+  user-select: none;
+  -webkit-user-drag: none;
+  & * {
+    user-select: none;
+    -webkit-user-drag: none;
+  }
   &::after {
     content: '';
     position: absolute;

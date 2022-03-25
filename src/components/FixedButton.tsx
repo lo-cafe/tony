@@ -13,8 +13,10 @@ interface FixedButtonProps {
   value: string;
   selected?: boolean;
   icon?: React.ReactNode;
-  add?: boolean;
+  color?: 'add' | 'delete';
+  withButtons?: boolean;
   onValueChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  disabled?: boolean;
 }
 
 function FixedButton({
@@ -26,7 +28,8 @@ function FixedButton({
   onDownload,
   onDelete,
   icon,
-  add,
+  color,
+  disabled,
 }: React.PropsWithChildren<FixedButtonProps>) {
   const [isEditing, setIsEditing] = useState(false);
 
@@ -42,7 +45,9 @@ function FixedButton({
 
   return (
     <FixedButtonWrapper
-      add={add}
+      disabled={disabled}
+      withButtons={!!onValueChange || !!onDownload || !!onDelete}
+      color={color}
       selected={selected}
       onClick={handleClick(() => onClick && onClick(data))}
     >
@@ -71,10 +76,17 @@ function FixedButton({
 
 export default FixedButton;
 
-const FixedButtonWrapper = styled.div<{ selected?: boolean; add?: boolean }>`
+const FixedButtonWrapper = styled.div<{
+  selected?: boolean;
+  color?: 'add' | 'delete';
+  withButtons?: boolean;
+  disabled?: boolean;
+}>`
   background: rgba(255, 255, 255, 0.7);
-  padding: ${({ selected, add }) =>
-    selected ? `0 ${add ? '12px' : '4px'} 0 14px` : `0 ${add ? '13px' : '5px'} 0 15px`};
+  padding: ${({ selected, withButtons }) =>
+    selected
+      ? `0 ${!withButtons ? '12px' : '4px'} 0 14px`
+      : `0 ${!withButtons ? '13px' : '5px'} 0 15px`};
   height: 40px;
   border-radius: 12px;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
@@ -87,7 +99,9 @@ const FixedButtonWrapper = styled.div<{ selected?: boolean; add?: boolean }>`
   font-size: 14px;
   align-items: center;
   transition: background-color 300ms ease-out;
-  color: ${({ add }) => (add ? '#0068f6' : '#424242')};
+  pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
+  color: ${({ color, disabled }) =>
+    disabled ? '#bdbdbd' : color ? (color === 'add' ? '#0068f6' : 'red') : '#424242'};
   border: ${({ selected }) => (selected ? 'solid 2px #0068f6' : 'solid 1px rgba(255,255,255,0.9)')};
   backdrop-filter: blur(40px);
   transition: box-shadow 300ms ease-out, background 300ms ease-out;

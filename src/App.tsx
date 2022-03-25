@@ -23,5 +23,8 @@ const GlobalStyles = createGlobalStyle`
   *, *::after, *::before {
     box-sizing: border-box;
   }
+  .react-flow__attribution {
+    display: none !important;
+  }
   @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 `;
