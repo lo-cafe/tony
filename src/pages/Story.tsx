@@ -773,7 +773,7 @@ const OverlayWrapper = styled.div`
   width: 100%;
   pointer-events: none;
   padding: 16px;
-  & > * {
+  & > * > * {
     pointer-events: all;
   }
 `;
