@@ -26,5 +26,4 @@ const GlobalStyles = createGlobalStyle`
   .react-flow__attribution {
     display: none !important;
   }
-  @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
 `;

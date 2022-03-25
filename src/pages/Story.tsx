@@ -108,6 +108,7 @@ const Story = () => {
   const reactFlowWrapper = useRef(null);
   const lastCopied = useRef<null | Node>(null);
   const playModeAnswersIds = useRef<ID[]>([]);
+  const newItemRef = useRef(null);
 
   const setChatsNames = (newChats: (old: Partial<Chat>[]) => Partial<Chat>[]) =>
     _setChatsNames((old) => newChats(old).map(({ id, name }) => ({ id, name })));
@@ -372,6 +373,7 @@ const Story = () => {
   );
   const onNodeDragStart = useCallback(
     (e: React.MouseEvent, rawNode: ChatNode) => {
+      console.log(altPressed);
       if (!altPressed) return true;
       const node = nodes.find((nd) => nd.id === rawNode.id)!;
       lastCopied.current = node;
@@ -732,8 +734,9 @@ const Story = () => {
           onStart={onStartDragToAddNewNode}
           // onDrag={this.handleDrag}
           onStop={onEndDragToAddNewNode}
+          nodeRef={newItemRef}
         >
-          <CardAdd isAddingNewNode={isAddingNewNode}>
+          <CardAdd ref={newItemRef} isAddingNewNode={isAddingNewNode}>
             <ChatNodeCard
               position={{ x: 0, y: 0 }}
               connectable={false}

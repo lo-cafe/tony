@@ -14,6 +14,14 @@ export default defineConfig({
     react(),
     htmlPlugin({
       // favicon: './logo.svg',
+      links: [
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOriginIsolated: true },
+        {
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap',
+        },
+      ],
       metas: [
         { name: 'title', content: 'The Old Man - Visual Novels' },
         { name: 'description', content: 'The Old Man is a visual novel writing app.' },
@@ -27,8 +35,10 @@ export default defineConfig({
         { name: 'twitter:title', content: 'The Old Man - Visual Novels' },
         { name: 'twitter:description', content: 'The Old Man is a visual novel writing app.' },
         { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
+        { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
+        { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
+        { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
       ],
-      style: `body { color: red; };*{ margin: 0px }`,
     }),
   ],
 });
