@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "build-typescript": "tsc && vite build",
     "preview": "vite preview",
     "prettier": "prettier 'src/**/*' --write --ignore-unknown",
     "postinstall": "patch-package"

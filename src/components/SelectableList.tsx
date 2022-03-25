@@ -37,7 +37,7 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
           color={option.color}
           onMouseEnter={option.onMouseEnter}
           onMouseLeave={option.onMouseLeave}
-          onClick={onClickProxy(option.onClick)}
+          onClick={onClickProxy(option.onClick!)}
           type="button"
         >
           {typeof option.label === 'object' ? option : <span>{option.icon}{option.label}</span>}
