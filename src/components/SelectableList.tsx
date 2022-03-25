@@ -40,7 +40,7 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
           onClick={onClickProxy(option.onClick)}
           type="button"
         >
-          {typeof option.label === 'function' ? option.label() : <span>{option.icon}{option.label}</span>}
+          {typeof option.label === 'object' ? option : <span>{option.icon}{option.label}</span>}
         </OptionButton>
       ),
     };
