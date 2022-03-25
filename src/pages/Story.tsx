@@ -72,10 +72,10 @@ const edgeTypes = { button: CustomEdge };
 const loadOrSave = (data?: DataStructure): DataStructure => {
   if (typeof window === 'undefined') return initialData;
   if (data) {
-    localStorage.setItem('data', JSON.stringify(data));
+    localStorage.setItem('datav2', JSON.stringify(data));
     return data;
   }
-  const storedData = localStorage.getItem('data');
+  const storedData = localStorage.getItem('datav2');
   return !storedData || !JSON.parse(storedData).length ? initialData : JSON.parse(storedData);
 };
 
