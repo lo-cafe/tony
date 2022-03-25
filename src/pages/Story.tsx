@@ -12,6 +12,7 @@ import {
   FiHelpCircle,
   FiPlay,
   FiTrash2,
+  FiUpload,
 } from 'react-icons/fi';
 import ReactFlow, {
   addEdge,
@@ -96,8 +97,12 @@ const Story = () => {
   const [edges, setEdges] = useState<Edge[]>(data.current[0]?.chats[0]?.edges);
   const { zoom } = useViewport();
 
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(loadedData[0].id);
-  const [selectedChatId, setSelectedChatId] = useState<ID | null>(loadedData[0].chats[0].id);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(
+    loadedData[0] && loadedData[0].id
+  );
+  const [selectedChatId, setSelectedChatId] = useState<ID | null>(
+    loadedData[0].chats[0] && loadedData[0].chats[0].id
+  );
   const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
 
   const [whatToPlay, setWhatToPlay] = useState<{ toShow: ChatNode; buttons: ChatNode[] } | null>(
@@ -127,7 +132,7 @@ const Story = () => {
 
   const selectedWorkspace = getSelectedWorkspace(data.current);
   const selectedChat = getSelectedChat(data.current);
-  const selectedNodes = useMemo(() => nodes.filter((x) => x.selected), [nodes]);
+  const selectedNodes = useMemo(() => nodes && nodes.filter((x) => x.selected), [nodes]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { value } = e.target;
@@ -309,6 +314,9 @@ const Story = () => {
           message: nd.data.message,
           character: nd.data.character,
           conditions: nd.data.conditions,
+          tonyData: {
+            position: nd.position,
+          },
           goesTo:
             nd.type === CHAT_NODE_CONDITION_TYPE
               ? ch.edges
@@ -341,6 +349,77 @@ const Story = () => {
       fileName: `${target.name}-Chats.json`,
       fileType: 'text/json',
     });
+  };
+
+  const importFromJson = (ref: React.RefObject<HTMLInputElement>, _e: any) => {
+    const e = _e;
+    console.log(e);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const newWorkspace = JSON.parse(event.target?.result as string);
+      console.log(newWorkspace);
+      if (!newWorkspace) return;
+      try {
+        const transformedData: Workspace = {
+          ...newWorkspace,
+          chats: newWorkspace.chats.map(
+            (ch: any): Chat => ({
+              ...ch,
+              nodes: ch.nodes.map(
+                (nd: any): ChatNode => ({
+                  id: nd.id,
+                  type: nd.type,
+                  position: nd.tonyData.position,
+                  data: {
+                    message: nd.message,
+                    character: nd.character,
+                  },
+                })
+              ),
+              edges: ch.nodes
+                .map(
+                  (nd: any): Edge =>
+                    nd.type === CHAT_NODE_CONDITION_TYPE
+                      ? [
+                          ...nd.goesTo.conditions.map((g: ID) => ({
+                            id: nanoid(ID_SIZE),
+                            source: nd.id,
+                            target: g,
+                          })),
+                          ...nd.goesTo.yes.map((g: ID) => ({
+                            id: nanoid(ID_SIZE),
+                            source: nd.id,
+                            target: g,
+                          })),
+                          ...nd.goesTo.no.map((g: ID) => ({
+                            id: nanoid(ID_SIZE),
+                            source: nd.id,
+                            target: g,
+                          })),
+                        ]
+                      : nd.goesTo.map((g: ID) => ({
+                          id: nanoid(ID_SIZE),
+                          source: nd.id,
+                          target: g,
+                        }))
+                )
+                .flat(),
+            })
+          ),
+        };
+        setWorkspacesNames((old) => [
+          ...old,
+          { id: transformedData.id, name: transformedData.name },
+        ]);
+        console.log(data.current);
+        data.current = [...data.current, transformedData];
+        ref.current!.value = '';
+      } catch (error) {
+        console.log(error);
+        alert('Invalid JSON file');
+      }
+    };
+    reader.readAsText(e.target.files[0]);
   };
 
   // const play = (id: ID) => {
@@ -519,7 +598,7 @@ const Story = () => {
   };
 
   const play = () => {
-    if (selectedNodes.length !== 1) return;
+    if (!selectedNodes || selectedNodes.length !== 1) return;
     playFrom(selectedNodes[0]);
   };
 
@@ -574,6 +653,12 @@ const Story = () => {
               color="add"
               value="New workspace"
             />
+            <FixedButton
+              icon={<FiUpload />}
+              onFileChange={importFromJson}
+              color="add"
+              value="Import workspace"
+            />
           </>
         </OTopLeft>
         <OTopLeftUnder>
@@ -595,7 +680,7 @@ const Story = () => {
         </OTopLeftUnder>
         <OTopRight>
           <FixedButton
-            disabled={selectedNodes.length !== 1}
+            disabled={!selectedNodes || selectedNodes.length !== 1}
             icon={<FiPlay />}
             onClick={play}
             color="add"
@@ -614,7 +699,7 @@ const Story = () => {
           <ZoomButton onClick={resetZoom} value={`${(zoom * 100).toFixed(0)}%`} />
         </OTopRight>
         <OTopRightUnder>
-          {selectedNodes.length === 1 && (
+          {selectedNodes && selectedNodes.length === 1 && (
             <SidePanel color={COLORS[selectedNodes[0].type as ChatNodeTypes]}>
               <SidePanelContent>
                 <ItemTitleBar>
@@ -727,26 +812,28 @@ const Story = () => {
         </StyledReactFlow>
       )}
       <div ref={reactFlowWrapper}>
-        <Draggable
-          position={{ x: 0, y: 0 }}
-          scale={1}
-          onStart={onStartDragToAddNewNode}
-          // onDrag={this.handleDrag}
-          onStop={onEndDragToAddNewNode}
-          nodeRef={newItemRef}
-        >
-          <CardAdd ref={newItemRef} isAddingNewNode={isAddingNewNode}>
-            <ChatNodeCard
-              position={{ x: 0, y: 0 }}
-              connectable={false}
-              id="addNode"
-              data={{
-                message: 'Add me!',
-                character: null,
-              }}
-            />
-          </CardAdd>
-        </Draggable>
+        {selectedWorkspaceId && selectedChatId && (
+          <Draggable
+            position={{ x: 0, y: 0 }}
+            scale={1}
+            onStart={onStartDragToAddNewNode}
+            // onDrag={this.handleDrag}
+            onStop={onEndDragToAddNewNode}
+            nodeRef={newItemRef}
+          >
+            <CardAdd ref={newItemRef} isAddingNewNode={isAddingNewNode}>
+              <ChatNodeCard
+                position={{ x: 0, y: 0 }}
+                connectable={false}
+                id="addNode"
+                data={{
+                  message: 'Add me!',
+                  character: null,
+                }}
+              />
+            </CardAdd>
+          </Draggable>
+        )}
       </div>
     </>
   );

@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { FiMessageSquare, FiTrash2, FiEdit2, FiDownload, FiCheck } from 'react-icons/fi';
 import AutowidthInput from 'react-autowidth-input';
+import { nanoid } from 'nanoid';
 
 import { ID } from '~/types/data';
 
@@ -18,6 +19,10 @@ interface FixedButtonProps {
   onValueChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   className?: string;
+  onFileChange?: (
+    ref: React.RefObject<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => void;
 }
 
 const FixedButton: FC<FixedButtonProps> = ({
@@ -28,12 +33,14 @@ const FixedButton: FC<FixedButtonProps> = ({
   onValueChange,
   onDownload,
   onDelete,
+  onFileChange,
   icon,
   color,
   disabled,
   className,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInnerClick = (func: (data?: ID) => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -45,6 +52,8 @@ const FixedButton: FC<FixedButtonProps> = ({
     onClick();
   };
 
+  const fileId = nanoid();
+
   return (
     <FixedButtonWrapper
       className={className}
@@ -54,6 +63,17 @@ const FixedButton: FC<FixedButtonProps> = ({
       selected={selected}
       onClick={handleClick(() => onClick && onClick(data))}
     >
+      {!!onFileChange && (
+        <>
+          <FileLabel htmlFor={fileId} />
+          <File
+            id={fileId}
+            onChange={(e) => onFileChange(inputRef, e)}
+            ref={inputRef}
+            type="file"
+          />
+        </>
+      )}
       {icon}
       {isEditing ? <PillInput name={data} value={value} onChange={onValueChange} /> : value}
       {onValueChange && (
@@ -79,6 +99,20 @@ const FixedButton: FC<FixedButtonProps> = ({
 
 export default FixedButton;
 
+const FileLabel = styled.label`
+  opacity: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+`;
+
+const File = styled.input`
+  display: none;
+`;
+
 const FixedButtonWrapper = styled.div<{
   selected?: boolean;
   color?: 'add' | 'delete';
@@ -101,6 +135,7 @@ const FixedButtonWrapper = styled.div<{
   gap: 8px;
   font-size: 14px;
   align-items: center;
+  position: relative;
   transition: background-color 300ms ease-out;
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   color: ${({ color, disabled }) =>
