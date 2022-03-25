@@ -15,13 +15,13 @@ import {
 } from 'react-icons/fi';
 import ReactFlow, {
   addEdge,
-  FitViewOptions,
   applyNodeChanges,
   applyEdgeChanges,
   Node,
   Edge,
   NodeChange,
   EdgeChange,
+  useReactFlow,
   useKeyPress,
   MiniMap,
   updateEdge,
@@ -373,7 +373,6 @@ const Story = () => {
   );
   const onNodeDragStart = useCallback(
     (e: React.MouseEvent, rawNode: ChatNode) => {
-      console.log(altPressed);
       if (!altPressed) return true;
       const node = nodes.find((nd) => nd.id === rawNode.id)!;
       lastCopied.current = node;
@@ -524,6 +523,11 @@ const Story = () => {
     playFrom(selectedNodes[0]);
   };
 
+  const resetZoom = () => {
+    if (!reactFlowInstance) return;
+    reactFlowInstance.zoomTo(1, { duration: 500 });
+  };
+
   return (
     <>
       {!!whatToPlay && (
@@ -607,13 +611,7 @@ const Story = () => {
             icon={<FiTrash2 />}
             value="Erase all data"
           />
-          <FixedButton
-            onClick={() => {
-              reactFlowInstance!.zoomTo(1);
-            }}
-            color="add"
-            value={`${(zoom * 100).toFixed(0)}%`}
-          />
+          <ZoomButton onClick={resetZoom} value={`${(zoom * 100).toFixed(0)}%`} />
         </OTopRight>
         <OTopRightUnder>
           {selectedNodes.length === 1 && (
@@ -716,6 +714,7 @@ const Story = () => {
           onNodeDragStop={onNodeDragStop}
           onInit={setReactFlowInstance}
           onConnect={onConnect}
+          selectNodesOnDrag={false}
           minZoom={0.1}
           maxZoom={4}
         >
@@ -754,6 +753,12 @@ const Story = () => {
 };
 
 export default Story;
+
+const ZoomButton = styled(FixedButton)`
+  width: 69px;
+  text-align: center;
+  justify-content: center;
+`;
 
 const StyledMiniMap = styled(MiniMap)`
   border-radius: 16px;

@@ -17,9 +17,10 @@ interface FixedButtonProps {
   withButtons?: boolean;
   onValueChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
+  className?: string;
 }
 
-function FixedButton({
+const FixedButton: FC<FixedButtonProps> = ({
   onClick,
   data,
   selected,
@@ -30,7 +31,8 @@ function FixedButton({
   icon,
   color,
   disabled,
-}: React.PropsWithChildren<FixedButtonProps>) {
+  className,
+}) => {
   const [isEditing, setIsEditing] = useState(false);
 
   const handleInnerClick = (func: (data?: ID) => void) => (e: React.MouseEvent) => {
@@ -45,6 +47,7 @@ function FixedButton({
 
   return (
     <FixedButtonWrapper
+      className={className}
       disabled={disabled}
       withButtons={!!onValueChange || !!onDownload || !!onDelete}
       color={color}
@@ -72,7 +75,7 @@ function FixedButton({
       )}
     </FixedButtonWrapper>
   );
-}
+};
 
 export default FixedButton;
 

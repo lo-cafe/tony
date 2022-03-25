@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 const path = require('path');
 import htmlPlugin from 'vite-plugin-html-config';
 
+
 // https://vitejs.dev/config/
 export default defineConfig({
   resolve: {
@@ -13,8 +14,11 @@ export default defineConfig({
   plugins: [
     react(),
     htmlPlugin({
-      // favicon: './logo.svg',
       links: [
+        { rel: 'apple-touch-icon', sizes: '180x180', href: 'https://tony.tallstranger.studio/assets/apple-touch-icon.png' },
+        { rel: 'icon', sizes: '32x32', href: 'https://tony.tallstranger.studio/assets/favicon-32x32.png' },
+        { rel: 'icon', sizes: '16x16', href: 'https://tony.tallstranger.studio/assets/favicon-16x16.png' },
+        { rel: 'manifest', href: 'https://tony.tallstranger.studio/assets/site.webmanifest' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOriginIsolated: true },
         {
@@ -23,21 +27,21 @@ export default defineConfig({
         },
       ],
       metas: [
-        { name: 'title', content: 'The Old Man - Visual Novels' },
-        { name: 'description', content: 'The Old Man is a visual novel writing app.' },
+        { name: 'title', content: 'Tony - Visual Novels' },
+        { name: 'description', content: 'Tony is a visual novel writing app.' },
         { name: 'og:type', content: 'website' },
-        { name: 'og:url', content: 'https://the-old-man.vercel.app' },
-        { name: 'og:title', content: 'The Old Man - Visual Novels' },
-        { name: 'og:description', content: 'The Old Man is a visual novel writing app.' },
-        { name: 'og:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
+        { name: 'og:url', content: 'https://tony.tallstranger.studio' },
+        { name: 'og:title', content: 'Tony - Visual Novels' },
+        { name: 'og:description', content: 'Tony is a visual novel writing app.' },
+        { name: 'og:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:url', content: 'https://the-old-man.vercel.app' },
+        { name: 'twitter:url', content: 'https://tony.tallstranger.studio' },
         { name: 'twitter:title', content: 'The Old Man - Visual Novels' },
-        { name: 'twitter:description', content: 'The Old Man is a visual novel writing app.' },
-        { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
-        { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
-        { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
-        { name: 'twitter:image', content: 'https://the-old-man.vercel.app/assets/cover.png' },
+        { name: 'twitter:description', content: 'Tony is a visual novel writing app.' },
+        { name: 'twitter:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },
+        { name: 'twitter:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },
+        { name: 'twitter:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },
+        { name: 'twitter:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },
       ],
     }),
   ],
