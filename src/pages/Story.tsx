@@ -107,7 +107,6 @@ const Story = () => {
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
   const reactFlowWrapper = useRef(null);
   const lastCopied = useRef<null | Node>(null);
-  const transformedData = useRef<any>(null);
   const playModeAnswersIds = useRef<ID[]>([]);
 
   const setChatsNames = (newChats: (old: Partial<Chat>[]) => Partial<Chat>[]) =>
@@ -296,8 +295,44 @@ const Story = () => {
     setEdges(selectedChatId ? getSelectedChat(data.current)!.edges : []);
   }, [selectedChatId, selectedWorkspaceId]);
 
-  const exportToJson = (id: ID) => {
+  const transformData = () => {
     const dataCopy = cloneDeep(data.current);
+    return dataCopy.map((ws) => ({
+      ...ws,
+      chats: ws.chats.map((ch) => ({
+        id: ch.id,
+        name: ch.name,
+        nodes: ch.nodes.map((nd) => ({
+          id: nd.id,
+          type: nd.type,
+          message: nd.data.message,
+          character: nd.data.character,
+          conditions: nd.data.conditions,
+          goesTo:
+            nd.type === CHAT_NODE_CONDITION_TYPE
+              ? ch.edges
+                  .filter((e) => e.source === nd.id)
+                  .reduce(
+                    (prev: { conditions: string[]; yes: string[]; no: string[] }, curr) => {
+                      const newConditions = curr.sourceHandle === 'condition' ? [curr.target] : [];
+                      const newYes = curr.sourceHandle === 'yes' ? [curr.target] : [];
+                      const newNo = curr.sourceHandle === 'no' ? [curr.target] : [];
+                      return {
+                        conditions: [...prev.conditions, ...newConditions],
+                        yes: [...prev.yes, ...newYes],
+                        no: [...prev.no, ...newNo],
+                      };
+                    },
+                    { conditions: [], yes: [], no: [] }
+                  )
+              : ch.edges.filter((e) => e.source === nd.id).map((e) => e.target),
+        })),
+      })),
+    }));
+  };
+
+  const exportToJson = (id: ID) => {
+    const dataCopy = transformData();
     const target = dataCopy.find((x) => x.id === id);
     if (!target) return;
     downloadFile({
@@ -431,42 +466,6 @@ const Story = () => {
     setSelectedChatId(firstChat ? firstChat.id : null);
   };
 
-  const transformData = () => {
-    const dataCopy = cloneDeep(data.current);
-    transformedData.current = dataCopy.map((ws) => ({
-      ...ws,
-      chats: ws.chats.map((ch) => ({
-        id: ch.id,
-        name: ch.name,
-        nodes: ch.nodes.map((nd) => ({
-          id: nd.id,
-          type: nd.type,
-          message: nd.data.message,
-          character: nd.data.character,
-          conditions: nd.data.conditions,
-          goesTo:
-            nd.type === CHAT_NODE_CONDITION_TYPE
-              ? ch.edges
-                  .filter((e) => e.source === nd.id)
-                  .reduce(
-                    (prev: { conditions: string[]; yes: string[]; no: string[] }, curr) => {
-                      const newConditions = curr.sourceHandle === 'condition' ? [curr.target] : [];
-                      const newYes = curr.sourceHandle === 'yes' ? [curr.target] : [];
-                      const newNo = curr.sourceHandle === 'no' ? [curr.target] : [];
-                      return {
-                        conditions: [...prev.conditions, ...newConditions],
-                        yes: [...prev.yes, ...newYes],
-                        no: [...prev.no, ...newNo],
-                      };
-                    },
-                    { conditions: [], yes: [], no: [] }
-                  )
-              : ch.edges.filter((e) => e.source === nd.id).map((e) => e.target),
-        })),
-      })),
-    }));
-  };
-
   const playFrom = (firstNode?: ChatNode): void => {
     if (!firstNode) {
       playModeAnswersIds.current = [];
@@ -525,6 +524,28 @@ const Story = () => {
 
   return (
     <>
+      {!!whatToPlay && (
+        <PlayModeWrapper>
+          <div>
+            <CharacterPlayModeName>
+              {characters &&
+                (characters.find((char) => char.id === whatToPlay.toShow.data.character)?.name ||
+                  'No one')}{' '}
+              said:
+            </CharacterPlayModeName>
+            <p>{whatToPlay.toShow.data.message}</p>
+            {whatToPlay.buttons.length > 0 ? (
+              whatToPlay.buttons.map((btn) => (
+                <Button key={btn.id} onClick={() => playFrom(btn)}>
+                  {btn.type === CHAT_NODE_TEXT_TYPE ? 'Next' : btn.data.message}
+                </Button>
+              ))
+            ) : (
+              <Button onClick={() => playFrom()}>Finish</Button>
+            )}
+          </div>
+        </PlayModeWrapper>
+      )}
       <OverlayWrapper>
         <OTopLeft>
           <>
@@ -666,28 +687,6 @@ const Story = () => {
           )}
         </OBottomLeft>
       </OverlayWrapper>
-      {!!whatToPlay && (
-        <PlayModeWrapper>
-          <div>
-            <CharacterPlayModeName>
-              {characters &&
-                (characters.find((char) => char.id === whatToPlay.toShow.data.character) ||
-                  'No one')}{' '}
-              said:
-            </CharacterPlayModeName>
-            <p>{whatToPlay.toShow.data.message}</p>
-            {whatToPlay.buttons.length > 0 ? (
-              whatToPlay.buttons.map((btn) => (
-                <Button key={btn.id} onClick={() => playFrom(btn)}>
-                  {btn.type === CHAT_NODE_TEXT_TYPE ? 'Next' : btn.data.message}
-                </Button>
-              ))
-            ) : (
-              <Button onClick={() => playFrom()}>Finish</Button>
-            )}
-          </div>
-        </PlayModeWrapper>
-      )}
       {!!selectedChat && (
         <StyledReactFlow
           nodeTypes={nodeTypes}
