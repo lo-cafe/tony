@@ -1,10 +1,26 @@
-import React from 'react';
 import { getBezierPath, getEdgeCenter, getMarkerEnd } from 'react-flow-renderer';
 import styled from 'styled-components';
+import ReactFlow, {
+  addEdge,
+  FitViewOptions,
+  applyNodeChanges,
+  applyEdgeChanges,
+  Node,
+  EdgeProps,
+  NodeChange,
+  EdgeChange,
+  useKeyPress,
+  MiniMap,
+  updateEdge,
+  Background,
+  useViewport,
+  ReactFlowInstance,
+  useUpdateNodeInternals,
+} from 'react-flow-renderer';
 
 const foreignObjectSize = 40;
 
-export default function CustomEdge({
+const CustomEdge: FC<EdgeProps> = ({
   id,
   sourceX,
   sourceY,
@@ -16,7 +32,7 @@ export default function CustomEdge({
   markerEnd,
   data,
   selected,
-}) {
+}) => {
   const edgePath = getBezierPath({
     sourceX,
     sourceY,
@@ -44,7 +60,7 @@ export default function CustomEdge({
         style={style}
         className="react-flow__edge-path"
         d={edgePath}
-        markerEnd={markerEnd}
+        markerEnd={markerEnd as string}
       />
       {/* {selected && (
         <EdgeButtonForeignobject
@@ -62,7 +78,9 @@ export default function CustomEdge({
       )} */}
     </>
   );
-}
+};
+
+export default CustomEdge;
 
 const EdgeButton = styled.button`
   width: 20px;

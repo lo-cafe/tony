@@ -4,8 +4,7 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build-typescript": "tsc && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "prettier": "prettier 'src/**/*' --write --ignore-unknown",
     "postinstall": "patch-package"
@@ -13,6 +12,7 @@
   "dependencies": {
     "@popperjs/core": "^2.11.4",
     "axios": "^0.26.0",
+    "d3": "^7.3.0",
     "firebase": "^9.6.7",
     "jszip": "^3.7.1",
     "lodash": "^4.17.21",
@@ -30,9 +30,11 @@
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
+    "@types/d3": "^7.1.0",
     "@types/lodash": "^4.14.179",
     "@types/react": "^17.0.33",
     "@types/react-dom": "^17.0.10",
+    "@types/react-transition-group": "^4.4.4",
     "@types/styled-components": "^5.1.23",
     "@vitejs/plugin-react": "^1.0.7",
     "eslint": "^8.10.0",
