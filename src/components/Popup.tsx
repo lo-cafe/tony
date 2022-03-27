@@ -5,7 +5,8 @@ import { Placement } from '@popperjs/core';
 import styled from 'styled-components';
 import { Transition } from 'react-transition-group';
 
-import Card from './Card';
+import CloseArea from '~/components/CloseArea';
+import Card from '~/components/Card';
 
 interface PopupProps {
   children: React.ReactNode;
@@ -28,7 +29,7 @@ const Popup: FC<PopupProps> = ({
 }) => {
   const [popperElement, setPopperElement] = useState(null);
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: 'right',
+    placement: 'bottom',
     modifiers: [
       {
         name: 'preventOverflow',
@@ -67,7 +68,11 @@ const Popup: FC<PopupProps> = ({
         <Transition
           onEnter={(node: any) => node.offsetHeight}
           in={active}
-          timeout={200}
+          timeout={{
+            appear: 5000,
+            enter: 200,
+            exit: 200,
+           }}
           unmountOnExit
           mountOnEnter
           appear
@@ -91,19 +96,6 @@ const Popup: FC<PopupProps> = ({
 };
 
 export default Popup;
-
-const CloseArea = styled.button`
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  bottom: 0;
-  left: 0;
-  background-color: transparent;
-  opacity: 0;
-  z-index: 9999;
-`;
 
 const Wrapper = styled(Card)<{ state: string }>`
   opacity: ${({ state }) => (state === 'entering' || state === 'entered' ? 1 : 0)};

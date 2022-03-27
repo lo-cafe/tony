@@ -23,7 +23,7 @@ export default defineConfig({
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOriginIsolated: true },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;600&family=Open+Sans:wght@400;500;600&family=Roboto+Condensed:ital,wght@1,300&family=Roboto+Mono:wght@400;600&family=Nunito:wght@400;500;700&display=swapdisplay=swap',
         },
       ],
       metas: [

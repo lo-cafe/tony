@@ -5,7 +5,7 @@ const Card = styled.div`
   margin: 0;
   border-radius: 16px;
   box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.15);
-  border: solid 1px rgba(255, 255, 255, 0.9);
+  border: solid 1px rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(40px);
 `;
 

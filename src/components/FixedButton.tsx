@@ -19,6 +19,8 @@ interface FixedButtonProps {
   onValueChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   className?: string;
+  rightIcon?: React.ReactNode;
+  as?: keyof JSX.IntrinsicElements;
   onFileChange?: (
     ref: React.RefObject<HTMLInputElement>,
     e: React.ChangeEvent<HTMLInputElement>
@@ -38,6 +40,8 @@ const FixedButton: FC<FixedButtonProps> = ({
   color,
   disabled,
   className,
+  rightIcon,
+  as,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -62,6 +66,7 @@ const FixedButton: FC<FixedButtonProps> = ({
       color={color}
       selected={selected}
       onClick={handleClick(() => onClick && onClick(data))}
+      as={as}
     >
       {!!onFileChange && (
         <>
@@ -76,6 +81,7 @@ const FixedButton: FC<FixedButtonProps> = ({
       )}
       {icon}
       {isEditing ? <PillInput name={data} value={value} onChange={onValueChange} /> : value}
+      {rightIcon}
       {onValueChange && (
         <FixedButtonInnerButton
           onClick={handleInnerClick(() => (isEditing ? setIsEditing(false) : setIsEditing(true)))}
@@ -113,12 +119,16 @@ const File = styled.input`
   display: none;
 `;
 
-const FixedButtonWrapper = styled.div<{
+const FixedButtonWrapper = styled.button<{
   selected?: boolean;
   color?: 'add' | 'delete';
   withButtons?: boolean;
   disabled?: boolean;
 }>`
+  & svg * {
+    stroke-width: 3px;
+  }
+  font-family: inherit;
   background: rgba(255, 255, 255, 0.7);
   padding: ${({ selected, withButtons }) =>
     selected
@@ -132,15 +142,15 @@ const FixedButtonWrapper = styled.div<{
   display: flex;
   font-weight: 600;
   justify-content: flex-start;
-  gap: 8px;
-  font-size: 14px;
+  gap: 6px;
+  font-size: 13px;
   align-items: center;
   position: relative;
   transition: background-color 300ms ease-out;
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   color: ${({ color, disabled }) =>
     disabled ? '#bdbdbd' : color ? (color === 'add' ? '#0068f6' : 'red') : '#424242'};
-  border: ${({ selected }) => (selected ? 'solid 2px #0068f6' : 'solid 1px rgba(255,255,255,0.9)')};
+  border: ${({ selected }) => (selected ? 'solid 2px #0068f6' : 'solid 1px rgba(255,255,255,0.8)')};
   backdrop-filter: blur(40px);
   transition: box-shadow 300ms ease-out, background 300ms ease-out;
   user-select: none;

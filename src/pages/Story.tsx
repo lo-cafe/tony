@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import styled, { css, keyframes } from 'styled-components';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash/cloneDeep';
+import merge from 'lodash/merge';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
 import {
   FiMessageSquare,
@@ -20,9 +21,6 @@ import ReactFlow, {
   applyEdgeChanges,
   Node,
   Edge,
-  NodeChange,
-  EdgeChange,
-  useReactFlow,
   useKeyPress,
   MiniMap,
   updateEdge,
@@ -31,6 +29,8 @@ import ReactFlow, {
   ReactFlowInstance,
   useUpdateNodeInternals,
 } from 'react-flow-renderer';
+import { getFirestore, getDoc, setDoc, doc, onSnapshot } from 'firebase/firestore';
+import userStore from '~/instances/userStore';
 
 import {
   ID,
@@ -42,6 +42,7 @@ import {
   ChatNodeTypes,
 } from '~/types/data';
 
+import LoginWidget from '~/components/LoginWidget';
 import CustomEdge from '~/components/CustomEdge';
 import FixedButton from '~/components/FixedButton';
 import ChatNodeCard from '~/components/ChatNodeCard';
@@ -59,8 +60,12 @@ import {
   initialChatNodeData,
   initialChatData,
   initialWorkspaceData,
-  initialData,
 } from '~/constants/initialData';
+import { initFirebase } from '~/instances/firebase';
+
+initFirebase();
+
+const db = getFirestore();
 
 interface MousePosition {
   x: number;
@@ -70,22 +75,39 @@ interface MousePosition {
 const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
 const edgeTypes = { button: CustomEdge };
 
-const loadOrSave = (data?: DataStructure): DataStructure => {
-  if (typeof window === 'undefined') return initialData;
+const _loadOrSave = (data?: DataStructure): DataStructure => {
+  if (typeof window === 'undefined') return [];
   if (data) {
     localStorage.setItem('datav2', JSON.stringify(data));
     return data;
   }
   const storedData = localStorage.getItem('datav2');
-  return !storedData || !JSON.parse(storedData).length ? initialData : JSON.parse(storedData);
+  return !storedData || !JSON.parse(storedData).length ? [] : JSON.parse(storedData);
 };
 
-const loadedData = loadOrSave();
-
 const Story = () => {
+  const loggedUserId = userStore.useState((s) => s.uid);
+  const debounceCloudSave = useRef<any>(null);
+
+  const loadOrSave = (newData?: DataStructure) => {
+    if (newData) {
+      clearTimeout(debounceCloudSave.current);
+      debounceCloudSave.current = setTimeout(() => {
+        _loadOrSave(newData);
+        if (loggedUserId) {
+          setDoc(doc(db, 'usersData', loggedUserId), { data: data.current });
+        }
+      }, 300);
+      return newData;
+    }
+    return _loadOrSave();
+  };
+
+  const loadedData = useRef(loadOrSave());
+
   const altPressed = useKeyPress('AltLeft');
   const updateNodeInternals = useUpdateNodeInternals();
-  const data = useRef<DataStructure>(loadedData);
+  const data = useRef<DataStructure>(loadedData.current!);
   const [workspacesNames, _setWorkspacesNames] = useState<Partial<Workspace>[]>(
     data.current.map(({ id, name }) => ({ id, name }))
   );
@@ -98,10 +120,12 @@ const Story = () => {
   const { zoom } = useViewport();
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(
-    loadedData[0] && loadedData[0].id
+    !!loadedData.current && !!loadedData.current[0] ? loadedData.current[0].id : null
   );
   const [selectedChatId, setSelectedChatId] = useState<ID | null>(
-    loadedData[0].chats[0] && loadedData[0].chats[0].id
+    !!loadedData.current && !!loadedData.current[0] && !!loadedData.current[0].chats[0]
+      ? loadedData.current[0].chats[0].id
+      : null
   );
   const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
 
@@ -133,6 +157,77 @@ const Story = () => {
   const selectedWorkspace = getSelectedWorkspace(data.current);
   const selectedChat = getSelectedChat(data.current);
   const selectedNodes = useMemo(() => nodes && nodes.filter((x) => x.selected), [nodes]);
+
+  useEffect(() => {
+    if (!loggedUserId) return;
+    const fetchData = async () => {
+      const retrievedDoc = await getDoc(doc(db, 'usersData', loggedUserId));
+      if (!retrievedDoc.data() || !retrievedDoc.data()!.data) return;
+      const mergedDatas = [
+        ...data.current,
+        ...retrievedDoc
+          .data()!
+          .data.filter((x: Workspace) => !data.current.find((el) => x.id === el.id)),
+      ];
+      data.current = mergedDatas;
+      updateMirrors();
+      loadOrSave(data.current);
+    };
+    fetchData();
+  }, [loggedUserId]);
+
+  useEffect(() => {
+    if (!selectedChatId || !getSelectedChat(data.current)) return;
+    getSelectedChat(data.current)!.nodes = nodes;
+    loadOrSave(data.current);
+  }, [nodes]);
+
+  useEffect(() => {
+    if (!selectedChatId || !getSelectedChat(data.current)) return;
+    getSelectedChat(data.current)!.edges = edges;
+    loadOrSave(data.current);
+  }, [edges]);
+
+  useEffect(() => {
+    if (!selectedChatId || !getSelectedWorkspace(data.current)) return;
+    getSelectedWorkspace(data.current)!.characters = characters;
+    loadOrSave(data.current);
+  }, [characters]);
+
+  useEffect(() => {
+    if (!selectedWorkspaceId) return;
+    const selectedWorkspaceChats = getSelectedWorkspace(data.current)?.chats;
+    if (!selectedWorkspaceChats) return;
+    getSelectedWorkspace(data.current)!.chats = chatsNames.map((c) =>
+      selectedWorkspaceChats.find(({ id }) => id === c.id)
+        ? { ...selectedWorkspaceChats.find(({ id }) => id === c.id), ...c }
+        : { ...initialChatData(), ...c }
+    ) as Chat[];
+    loadOrSave(data.current);
+  }, [chatsNames]);
+
+  useEffect(() => {
+    data.current = workspacesNames.map((w) =>
+      data.current.find(({ id }) => id === w.id)
+        ? {
+            ...data.current.find(({ id }) => id === w.id),
+            ...w,
+          }
+        : { ...initialWorkspaceData(), ...w }
+    ) as DataStructure;
+    loadOrSave(data.current);
+  }, [workspacesNames]);
+
+  const updateMirrors = () => {
+    setWorkspacesNames(() => data.current || []);
+    setChatsNames(() => getSelectedWorkspace(data.current)?.chats || []);
+    setNodes(selectedChatId ? getSelectedChat(data.current)?.nodes || [] : []);
+    setEdges(selectedChatId ? getSelectedChat(data.current)?.edges || [] : []);
+  };
+
+  useEffect(() => {
+    updateMirrors();
+  }, [selectedChatId, selectedWorkspaceId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { value } = e.target;
@@ -253,53 +348,6 @@ const Story = () => {
       })
     );
   };
-
-  useEffect(() => {
-    if (!selectedChatId) return;
-    getSelectedChat(data.current)!.nodes = nodes;
-    loadOrSave(data.current);
-  }, [nodes]);
-
-  useEffect(() => {
-    if (!selectedChatId) return;
-    getSelectedChat(data.current)!.edges = edges;
-    loadOrSave(data.current);
-  }, [edges]);
-
-  useEffect(() => {
-    if (!selectedChatId) return;
-    getSelectedWorkspace(data.current)!.characters = characters;
-    loadOrSave(data.current);
-  }, [characters]);
-
-  useEffect(() => {
-    if (!selectedWorkspaceId) return;
-    const selectedWorkspaceChats = getSelectedWorkspace(data.current)!.chats;
-    getSelectedWorkspace(data.current)!.chats = chatsNames.map((c) =>
-      selectedWorkspaceChats.find(({ id }) => id === c.id)
-        ? { ...selectedWorkspaceChats.find(({ id }) => id === c.id), ...c }
-        : { ...initialChatData(), ...c }
-    ) as Chat[];
-    loadOrSave(data.current);
-  }, [chatsNames]);
-
-  useEffect(() => {
-    data.current = workspacesNames.map((w) =>
-      data.current.find(({ id }) => id === w.id)
-        ? {
-            ...data.current.find(({ id }) => id === w.id),
-            ...w,
-          }
-        : { ...initialWorkspaceData(), ...w }
-    ) as DataStructure;
-    loadOrSave(data.current);
-  }, [workspacesNames]);
-
-  useEffect(() => {
-    setChatsNames(() => getSelectedWorkspace(data.current)?.chats || []);
-    setNodes(selectedChatId ? getSelectedChat(data.current)!.nodes : []);
-    setEdges(selectedChatId ? getSelectedChat(data.current)!.edges : []);
-  }, [selectedChatId, selectedWorkspaceId]);
 
   const transformData = () => {
     const dataCopy = cloneDeep(data.current);
@@ -662,7 +710,7 @@ const Story = () => {
           </>
         </OTopLeft>
         <OTopLeftUnder>
-          {selectedWorkspace && (
+          {selectedWorkspace && characters && (
             <>
               {characters.map((char) => (
                 <FixedButton
@@ -686,7 +734,7 @@ const Story = () => {
             color="add"
             value="Play"
           />
-          <FixedButton
+          {/* <FixedButton
             onClick={() => {
               if (!window.confirm('Are you really sure?')) return;
               localStorage.removeItem('data');
@@ -695,8 +743,9 @@ const Story = () => {
             color="delete"
             icon={<FiTrash2 />}
             value="Erase all data"
-          />
+          /> */}
           <ZoomButton onClick={resetZoom} value={`${(zoom * 100).toFixed(0)}%`} />
+          <LoginWidget />
         </OTopRight>
         <OTopRightUnder>
           {selectedNodes && selectedNodes.length === 1 && (
@@ -1086,7 +1135,7 @@ const SidePanel = styled.div<{ color: string }>`
   padding: 25px;
   border-radius: 24px;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  border: solid 1px rgba(255, 255, 255, 0.9);
+  border: solid 1px rgba(255, 255, 255, 0.8);
   z-index: 9;
   display: flex;
   flex-direction: column;
