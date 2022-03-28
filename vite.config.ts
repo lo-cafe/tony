@@ -36,7 +36,7 @@ export default defineConfig({
         { name: 'og:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },
         { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:url', content: 'https://tony.tallstranger.studio' },
-        { name: 'twitter:title', content: 'The Old Man - Visual Novels' },
+        { name: 'twitter:title', content: 'Tony - Visual Novels' },
         { name: 'twitter:description', content: 'Tony is a visual novel writing app.' },
         { name: 'twitter:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },
         { name: 'twitter:image', content: 'https://tony.tallstranger.studio/assets/cover.png' },

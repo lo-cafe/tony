@@ -5,19 +5,19 @@ import { ReactFlowProvider } from 'react-flow-renderer';
 import { getAuth } from 'firebase/auth';
 
 import { initFirebase } from '~/instances/firebase';
-import userStore from '~/instances/userStore';
+import useUserStore from '~/instances/userStore';
 import Story from '~/pages/Story';
 
 initFirebase();
 const auth = getAuth();
 
 const App = () => {
+  const setEmail = useUserStore((state) => state.setEmail);
+  const setUid = useUserStore((state) => state.setUid);
   useEffect(() => {
     auth.onAuthStateChanged((user) => {
-      userStore.update((s) => {
-        s.email = user?.email || '';
-        s.uid = user?.uid || '';
-      });
+      setEmail(user?.email || '');
+      setUid(user?.uid || '');
     });
   }, []);
   return (

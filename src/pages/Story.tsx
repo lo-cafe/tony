@@ -30,7 +30,7 @@ import ReactFlow, {
   useUpdateNodeInternals,
 } from 'react-flow-renderer';
 import { getFirestore, getDoc, setDoc, doc, onSnapshot } from 'firebase/firestore';
-import userStore from '~/instances/userStore';
+import useUserStore from '~/instances/userStore';
 
 import {
   ID,
@@ -86,7 +86,7 @@ const _loadOrSave = (data?: DataStructure): DataStructure => {
 };
 
 const Story = () => {
-  const loggedUserId = userStore.useState((s) => s.uid);
+  const loggedUserId = useUserStore((s) => s.uid);
   const debounceCloudSave = useRef<any>(null);
 
   const loadOrSave = (newData?: DataStructure) => {

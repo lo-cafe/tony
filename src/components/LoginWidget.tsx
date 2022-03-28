@@ -13,7 +13,7 @@ import { Transition } from 'react-transition-group';
 import { FiUser } from 'react-icons/fi';
 import { InfinitySpin } from 'react-loader-spinner';
 import { initFirebase } from '~/instances/firebase';
-import userStore from '~/instances/userStore';
+import useUserStore from '~/instances/userStore';
 
 import CloseArea from '~/components/CloseArea';
 import Button from '~/components/Button';
@@ -25,7 +25,7 @@ const auth = getAuth();
 setPersistence(auth, browserSessionPersistence);
 
 const LoginWidget = () => {
-  const loggedUserEmail = userStore.useState((s) => s.email);
+  const loggedUserEmail = useUserStore((s) => s.email);
   const [widgetOpen, setWidgetOpen] = useState(false);
   const [email, setEmail] = useState('igormarcossi@hey.com');
   const [password, setPassword] = useState('guigo001');

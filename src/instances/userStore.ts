@@ -1,6 +1,17 @@
-import { Store } from "pullstate";
+import create from 'zustand';
 
-export default new Store({
+interface UserStore {
+  email: string;
+  uid: string;
+  setEmail: (email: string) => void;
+  setUid: (uid: string) => void;
+}
+
+const useUserStore = create<UserStore>((set) => ({
   email: '',
   uid: '',
-});
+  setEmail: (email: string) => set((state) => ({ email })),
+  setUid: (uid: string) => set((state) => ({ uid })),
+}));
+
+export default useUserStore;
