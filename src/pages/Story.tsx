@@ -265,18 +265,13 @@ const Story = () => {
   // console.log(nodes)
 
   const deleteChat = (targetId: ID) => {
-    if (
-      !selectedWorkspace ||
-      !targetId ||
-      !window.confirm('Are you sure you want to delete this item?')
-    )
-      return;
+    if (!selectedWorkspace || !targetId) return;
     if (targetId === selectedChatId) setSelectedChatId(null);
     _setChatsNames((old) => old.filter(({ id }) => id !== targetId));
   };
 
   const deleteWorkspace = (targetId: ID) => {
-    if (!targetId || !window.confirm('Are you sure you want to delete this item?')) return;
+    if (!targetId) return;
     if (targetId === selectedWorkspaceId) {
       setSelectedChatId(null);
       setSelectedWorkspaceId(null);
@@ -285,7 +280,7 @@ const Story = () => {
   };
 
   const deleteChar = (targetId: ID) => {
-    if (!selectedWorkspace || !window.confirm('Are you sure you want to delete this item?')) return;
+    if (!selectedWorkspace) return;
     setCharacters((old) => old.filter((char) => char.id !== targetId));
     setNodes((old) =>
       old.map((node) => ({
@@ -584,7 +579,10 @@ const Story = () => {
       setIsAddingNewNode(false);
     }, 1);
     const newNode = initialChatNodeData();
-    newNode.position = reactFlowInstance.project({ x: info.x - 140, y: info.y + 340 });
+    newNode.position = reactFlowInstance.project({
+      x: info.x - 140,
+      y: info.y + window.innerHeight - 70 - 40 - 170,
+    });
     setNodes((nds) => [...nds, newNode]);
   };
 
@@ -908,7 +906,7 @@ const OverlayWrapper = styled.div`
   grid-auto-flow: row;
   grid-template-areas:
     'topLeft . topRight'
-    'topLeftUnder . topRightUnder'
+    'topLeftUnder topRightUnder topRightUnder'
     '. . .'
     'bottomLeft . .';
   z-index: 9;
@@ -949,18 +947,9 @@ const OBottomLeft = styled(OArea)`
   align-items: flex-end;
 `;
 
-const lol = keyframes`
-  0% {
-    transform: scale(1);
-  }
-  100% {
-    transform: scale(1.2);
-  }
-`;
-
 const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   position: fixed;
-  top: 300px;
+  bottom: 70px;
   left: ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? '-185px' : '-110px')};
   z-index: 99999;
   opacity: 0.6;

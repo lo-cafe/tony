@@ -29,7 +29,7 @@ const Popup: FC<PopupProps> = ({
 }) => {
   const [popperElement, setPopperElement] = useState(null);
   const { styles, attributes } = usePopper(referenceElement, popperElement, {
-    placement: 'bottom',
+    placement: 'bottom-start',
     modifiers: [
       {
         name: 'preventOverflow',
@@ -41,7 +41,7 @@ const Popup: FC<PopupProps> = ({
       {
         name: 'offset',
         options: {
-          offset: [offset, offset],
+          offset: [0, 4],
         },
       },
     ],

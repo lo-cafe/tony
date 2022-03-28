@@ -44,6 +44,7 @@ const FixedButton: FC<FixedButtonProps> = ({
   as,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [expandedDelete, _setExpandedDelete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleInnerClick = (func: (data?: ID) => void) => (e: React.MouseEvent) => {
@@ -54,6 +55,16 @@ const FixedButton: FC<FixedButtonProps> = ({
   const handleClick = (onClick: () => void) => () => {
     if (isEditing) return;
     onClick();
+  };
+
+  const undoConfirmDelete = () => {
+    _setExpandedDelete(false);
+    document.removeEventListener('click', undoConfirmDelete);
+  };
+
+  const setExpandedDelete = (expanded: boolean) => {
+    document.addEventListener('click', undoConfirmDelete);
+    _setExpandedDelete(expanded);
   };
 
   const fileId = nanoid();
@@ -95,8 +106,15 @@ const FixedButton: FC<FixedButtonProps> = ({
         </FixedButtonInnerButton>
       )}
       {onDelete && (
-        <FixedButtonInnerButton red onClick={handleInnerClick(() => onDelete(data))}>
+        <FixedButtonInnerButton
+          opened={expandedDelete}
+          red
+          onClick={handleInnerClick(() =>
+            expandedDelete ? onDelete(data) : setExpandedDelete(true)
+          )}
+        >
           <FiTrash2 />
+          {expandedDelete && 'Delete'}
         </FixedButtonInnerButton>
       )}
     </FixedButtonWrapper>
@@ -174,21 +192,28 @@ const PillInput = styled(AutowidthInput)`
   font-size: inherit;
 `;
 
-const FixedButtonInnerButton = styled.button<{ red?: boolean }>`
+const FixedButtonInnerButton = styled.button<{ red?: boolean; opened?: boolean }>`
   color: inherit;
   border-radius: 8px;
   height: 28px;
-  width: 28px;
+  gap: 4px;
+  width: ${({ opened }) => (opened ? '73px' : '28px')};
   display: flex;
   justify-content: flex-start;
-  font-size: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
   align-items: center;
   border: none;
+  overflow: hidden;
+  svg {
+    flex-shrink: 0;
+  }
   background: rgba(0, 0, 0, 0.05);
   &:hover {
     background: rgba(0, 0, 0, 0.1);
   }
-  transition: background-color 300ms ease-out;
+  transition: background-color 300ms ease-out, width 200ms ease-out;
   color: ${({ red }) => (red ? 'red' : 'inherit')};
   cursor: pointer;
 `;
