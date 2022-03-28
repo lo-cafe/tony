@@ -27,8 +27,8 @@ setPersistence(auth, browserSessionPersistence);
 const LoginWidget = () => {
   const loggedUserEmail = useUserStore((s) => s.email);
   const [widgetOpen, setWidgetOpen] = useState(false);
-  const [email, setEmail] = useState('igormarcossi@hey.com');
-  const [password, setPassword] = useState('guigo001');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
