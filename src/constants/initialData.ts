@@ -1,5 +1,8 @@
 import { nanoid } from 'nanoid';
 import { Edge } from 'react-flow-renderer';
+import randomWords from 'random-words';
+
+import capitalize from '~/utils/capitalize'
 
 import {
   ID,
@@ -14,7 +17,7 @@ import { CHAT_NODE_TEXT_TYPE, ID_SIZE } from '~/constants/variables';
 
 export const initialCharacterData = (): Character => ({
   id: nanoid(ID_SIZE),
-  name: 'Char 1',
+  name: capitalize(randomWords()),
   description: '',
 });
 
@@ -46,13 +49,13 @@ export const initialEdge = (source: ID, target: ID): Edge => ({
 
 export const initialChatData = (): Chat => ({
   id: nanoid(ID_SIZE),
-  name: 'New Chat',
+  name: capitalize(randomWords()),
   nodes: [],
   edges: [],
 });
 
 export const initialWorkspaceData = (): Workspace => ({
-  name: 'New Workspace',
+  name: capitalize(randomWords()),
   id: nanoid(ID_SIZE),
   characters: [],
   chats: [initialChatData()],

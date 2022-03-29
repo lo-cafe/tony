@@ -70,6 +70,7 @@ initFirebase();
 const db = getFirestore();
 
 type WorkspacesNames = Optional<Workspace, 'characters' | 'chats'>;
+type ChatNames = Optional<Chat, 'nodes' | 'edges'>;
 
 const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
 const edgeTypes = { button: CustomEdge };
@@ -111,7 +112,7 @@ const Story = () => {
     data.current.map(({ id, name }) => ({ id, name }))
   );
   const [characters, setCharacters] = useState<Character[]>(data.current[0]?.characters);
-  const [chatsNames, _setChatsNames] = useState<Partial<Chat>[]>(
+  const [chatsNames, _setChatsNames] = useState<ChatNames[]>(
     data.current[0]?.chats.map(({ id, name }) => ({ id, name }))
   );
   const [nodes, setNodes] = useState<ChatNode[]>(data.current[0]?.chats[0]?.nodes);
@@ -138,7 +139,7 @@ const Story = () => {
   const playModeAnswersIds = useRef<ID[]>([]);
   const newItemRef = useRef(null);
 
-  const setChatsNames = (newChats: (old: Partial<Chat>[]) => Partial<Chat>[]) =>
+  const setChatsNames = (newChats: (old: ChatNames[]) => ChatNames[]) =>
     _setChatsNames((old) => newChats(old).map(({ id, name }) => ({ id, name })));
 
   const setWorkspacesNames = (newWorkspaces: (old: WorkspacesNames[]) => WorkspacesNames[]) =>
@@ -261,8 +262,6 @@ const Story = () => {
     updateNodeInternals(id);
   };
 
-  // console.log(nodes)
-
   const deleteChat = (targetId: ID) => {
     if (!selectedWorkspace || !targetId) return;
     if (targetId === selectedChatId) setSelectedChatId(null);
@@ -298,7 +297,9 @@ const Story = () => {
 
   const addChat = () => {
     if (!selectedWorkspace) return;
-    setChatsNames((old) => [...old, initialChatData()]);
+    const newChat = initialChatData();
+    setChatsNames((old) => [...old, newChat]);
+    setSelectedChatId(newChat.id);
   };
 
   const addWorkspace = () => {
@@ -397,11 +398,9 @@ const Story = () => {
 
   const importFromJson = (ref: React.RefObject<HTMLInputElement>, _e: any) => {
     const e = _e;
-    console.log(e);
     const reader = new FileReader();
     reader.onload = (event) => {
       const newWorkspace = JSON.parse(event.target?.result as string);
-      console.log(newWorkspace);
       if (!newWorkspace) return;
       try {
         const transformedData: Workspace = {
@@ -455,7 +454,6 @@ const Story = () => {
           ...old,
           { id: transformedData.id, name: transformedData.name },
         ]);
-        console.log(data.current);
         data.current = [...data.current, transformedData];
         ref.current!.value = '';
       } catch (error) {
@@ -680,49 +678,51 @@ const Story = () => {
       )}
       <OverlayWrapper>
         <OTopLeft>
-          <>
-            <FScreenListing
-              listName="Workspaces"
-              items={workspacesNames}
-              icon={<FiBox />}
-              selectedItemId={selectedWorkspaceId}
-              onItemClick={setWorkspace}
-              onItemValueChange={changeWorkspaceName}
-              onItemDelete={deleteWorkspace}
-              onItemDownload={exportToJson}
-              extraOptions={[
-                {
-                  value: 'New workspace',
-                  icon: <FiPlus />,
-                  color: 'add',
-                  onClick: addWorkspace,
-                },
-                {
-                  value: 'Import workspace',
-                  icon: <FiUpload />,
-                  color: 'add',
-                  discrete: true,
-                  onFileChange: importFromJson,
-                },
-              ]}
-            />
-          </>
+          <FScreenListing
+            listName="Workspaces"
+            items={workspacesNames}
+            icon={<FiBox />}
+            selectedItemId={selectedWorkspaceId}
+            onItemClick={setWorkspace}
+            onItemValueChange={changeWorkspaceName}
+            onItemDelete={deleteWorkspace}
+            onItemDownload={exportToJson}
+            extraOptions={[
+              {
+                value: 'New workspace',
+                icon: <FiPlus />,
+                color: 'add',
+                onClick: addWorkspace,
+              },
+              {
+                value: 'Import workspace',
+                icon: <FiUpload />,
+                color: 'add',
+                discrete: true,
+                onFileChange: importFromJson,
+              },
+            ]}
+          />
         </OTopLeft>
         <OTopLeftUnder>
           {selectedWorkspace && characters && (
-            <>
-              {characters.map((char) => (
-                <FixedButton
-                  key={char.id}
-                  icon={<FiUser />}
-                  data={char.id}
-                  value={char.name}
-                  onValueChange={changeCharName}
-                  onDelete={deleteChar}
-                />
-              ))}
-              <FixedButton icon={<FiPlus />} onClick={addChar} color="add" value="New character" />
-            </>
+            <FScreenListing
+              listName="Characters"
+              items={characters}
+              numberOfRecentItems={0}
+              icon={<FiUser />}
+              onItemValueChange={changeCharName}
+              onItemDelete={deleteChar}
+              extraOptions={[
+                {
+                  value: 'New character',
+                  icon: <FiPlus />,
+                  color: 'add',
+                  onClick: addChar,
+                  discrete: true,
+                },
+              ]}
+            />
           )}
         </OTopLeftUnder>
         <OTopRight>
@@ -802,21 +802,23 @@ const Story = () => {
         </OTopRightUnder>
         <OBottomLeft>
           {selectedWorkspace && (
-            <>
-              {chatsNames.map((chat) => (
-                <FixedButton
-                  key={chat.id}
-                  icon={<FiMessageSquare />}
-                  data={chat.id}
-                  value={chat.name!}
-                  selected={chat.id === selectedChatId}
-                  onClick={setSelectedChatId}
-                  onValueChange={changeChatName}
-                  onDelete={deleteChat}
-                />
-              ))}
-              <FixedButton icon={<FiPlus />} onClick={addChat} color="add" value="New chat" />
-            </>
+            <FScreenListing
+              listName="Chats"
+              items={chatsNames}
+              icon={<FiMessageSquare />}
+              selectedItemId={selectedChatId}
+              onItemClick={setSelectedChatId}
+              onItemValueChange={changeChatName}
+              onItemDelete={deleteChat}
+              extraOptions={[
+                {
+                  value: 'New chat',
+                  icon: <FiPlus />,
+                  color: 'add',
+                  onClick: addChat,
+                },
+              ]}
+            />
           )}
         </OBottomLeft>
       </OverlayWrapper>
@@ -916,7 +918,7 @@ const OverlayWrapper = styled.div`
   width: 100%;
   pointer-events: none;
   padding: 16px;
-  & > * > * {
+  * > * {
     pointer-events: all;
   }
 `;
@@ -1145,21 +1147,4 @@ const SidePanel = styled.div<{ color: string }>`
     user-select: none;
     -webkit-user-drag: none;
   }
-`;
-
-const GoingToPanel = styled.div`
-  padding: 10px;
-  display: inline-block;
-  background: white;
-  border-radius: 16px;
-  position: absolute;
-  width: 125px;
-  display: flex;
-  top: 155px;
-  right: 0;
-  margin: 0;
-  flex-direction: column;
-  gap: 4px;
-  z-index: 3;
-  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
 `;

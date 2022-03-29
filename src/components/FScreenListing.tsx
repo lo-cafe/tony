@@ -38,6 +38,13 @@ interface FScreenListingProps {
   className?: string;
 }
 
+interface Position {
+  top?: number;
+  left?: number;
+  right?: number;
+  bottom?: number;
+}
+
 interface TransformProps {
   recentItems: Item[];
   allItems: Item[];
@@ -59,8 +66,12 @@ const getTransformedItems = ({
     .map(({ id }) => allItems.find((item) => item.id === id))
     .filter((x) => !!x) as Item[];
   const itemsNotInRecent = allItems.filter((x) => !recentItems.find((y) => y.id === x.id));
-  if (recentItems.find(({ id }) => id === selectedItemId))
-    return getRecent ? recentItems : [...recentItems, ...itemsNotInRecent];
+  if (recentItems.find(({ id }) => id === selectedItemId)) {
+    const recentItemsWithMissing = [...recentItems, ...itemsNotInRecent];
+    return getRecent
+      ? recentItemsWithMissing.slice(0, numberOfRecentItems)
+      : recentItemsWithMissing;
+  }
   const selectedItem = allItems.find((x) => x.id === selectedItemId);
   const newItems = [
     selectedItem,
@@ -72,7 +83,7 @@ const getTransformedItems = ({
 
 const FScreenListing: FC<FScreenListingProps> = memo(
   ({
-    numberOfRecentItems,
+    numberOfRecentItems = 3,
     listName,
     items,
     onItemClick,
@@ -88,6 +99,13 @@ const FScreenListing: FC<FScreenListingProps> = memo(
   }) => {
     const [fullScreen, setFullScreen] = useState(false);
     const [leaving, setLeaving] = useState(false);
+    const [positionInFullScreen, setPositionInFullScreen] = useState<Position>({
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+    });
+    const wrapperRef = useRef<HTMLDivElement>(null);
 
     const initialState = useRef(
       getTransformedItems({
@@ -102,7 +120,7 @@ const FScreenListing: FC<FScreenListingProps> = memo(
     const [previousSelected, setPreviousSelected] = useState<Item[]>(initialState.current);
 
     const closeFullScreen = () => {
-      if (!fullScreen && leaving) return;
+      if (!fullScreen || leaving) return;
       setLeaving(true);
       setTimeout(() => {
         setLeaving(false);
@@ -111,6 +129,23 @@ const FScreenListing: FC<FScreenListingProps> = memo(
     };
 
     useEffect(closeFullScreen, [selectedItemId]);
+
+    const updatePositionInFullScreen = () => {
+      if (!wrapperRef.current) return;
+      const { top, left, right, bottom } = wrapperRef.current.getBoundingClientRect();
+      const newPosition: Position = {};
+      if (top > bottom) newPosition.bottom = bottom;
+      else newPosition.top = top;
+      if (left > right) newPosition.right = right;
+      else newPosition.left = left;
+      setPositionInFullScreen(newPosition);
+    };
+
+    useEffect(() => {
+      updatePositionInFullScreen();
+      window.addEventListener('resize', updatePositionInFullScreen);
+      return () => window.removeEventListener('resize', updatePositionInFullScreen);
+    }, [wrapperRef]);
 
     useEffect(() => {
       setPreviousSelected(
@@ -140,7 +175,14 @@ const FScreenListing: FC<FScreenListingProps> = memo(
       (fullScreen && !leaving ? extraOptions : extraOptions.filter((x) => !x.discrete));
 
     return (
-      <Wrapper leaving={leaving} fullScreen={fullScreen} onClick={closeFullScreen}>
+      <Wrapper
+        ref={wrapperRef}
+        className={className}
+        leaving={leaving}
+        fullScreen={fullScreen}
+        onClick={closeFullScreen}
+        positionInFullScreen={positionInFullScreen}
+      >
         {itemsToIterate.map(({ id, name, disabled }) => (
           <FixedButton
             key={id}
@@ -166,10 +208,10 @@ const FScreenListing: FC<FScreenListingProps> = memo(
               onFileChange={onFileChange}
             />
           ))}
-        {(!fullScreen || leaving) && (
+        {(!fullScreen || leaving) && (items.length > numberOfRecentItems || numberOfRecentItems === 0) && (
           <FixedButton
             icon={<FiGrid />}
-            value={`See all ${listName}`}
+            value={`See${numberOfRecentItems !== 0 ? ` all ${items.length}` : ''}  ${listName}`}
             onClick={() => setFullScreen(true)}
             color="add"
           />
@@ -181,9 +223,36 @@ const FScreenListing: FC<FScreenListingProps> = memo(
 
 export default FScreenListing;
 
-const Wrapper = styled.div<{ leaving: boolean; fullScreen: boolean }>`
-  position: ${({ fullScreen }) => (fullScreen ? 'fixed' : 'relative')};
-  align-content: flex-start;
+interface WrapperProps {
+  leaving: boolean;
+  fullScreen: boolean;
+  positionInFullScreen: Position;
+}
+
+const padding =
+  (position: keyof Position) =>
+  ({ fullScreen, leaving, positionInFullScreen }: WrapperProps) => {
+    if (!fullScreen && !leaving) return 0;
+    const positions = {
+      top: positionInFullScreen.top ? positionInFullScreen.top + 'px' : 0,
+      right: positionInFullScreen.right ? positionInFullScreen.right + 'px' : leaving ? 0 : '40vw',
+      bottom: positionInFullScreen.bottom ? positionInFullScreen.bottom + 'px' : 0,
+      left: positionInFullScreen.left ? positionInFullScreen.left + 'px' : leaving ? 0 : '40vw',
+    };
+    return positions[position];
+  };
+
+const justifyContent = ({ fullScreen, leaving, positionInFullScreen }: WrapperProps) => {
+  if (fullScreen && !leaving) return positionInFullScreen.left ? 'flex-start' : 'flex-end';
+  return 'flex-start';
+};
+const alignContent = ({ fullScreen, leaving, positionInFullScreen }: WrapperProps) => {
+  if (fullScreen && !leaving) return positionInFullScreen.top ? 'flex-start' : 'flex-end';
+  return 'flex-start';
+};
+
+const Wrapper = styled.div<WrapperProps>`
+  position: ${({ fullScreen }) => (fullScreen ? 'fixed' : 'static')};
   flex-wrap: wrap;
   top: 0;
   left: 0;
@@ -194,11 +263,18 @@ const Wrapper = styled.div<{ leaving: boolean; fullScreen: boolean }>`
   color: #424242;
   transition: backdrop-filter 300ms ease-out, background 300ms ease-out;
   align-items: flex-start;
-  justify-content: flex-start;
   background: ${({ fullScreen, leaving }) =>
     fullScreen && !leaving ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0)'};
-  z-index: 20;
-  padding: ${({ fullScreen, leaving }) =>
-    fullScreen ? (leaving ? '16px' : '16px 40vw 16px 16px') : '0'};
+  z-index: ${({ fullScreen, leaving }) => (fullScreen ? 20 : 19)};
+  padding-top: ${padding('top')};
+  padding-right: ${padding('right')};
+  padding-bottom: ${padding('bottom')};
+  padding-left: ${padding('left')};
+  justify-content: ${justifyContent};
+  align-content: ${alignContent};
   backdrop-filter: blur(${({ fullScreen, leaving }) => (fullScreen && !leaving ? 30 : 0)}px);
+  pointer-events: ${({ fullScreen, leaving }) => (fullScreen && !leaving ? 'all' : 'none')} !important;
+  * {
+    pointer-events: all;
+  }
 `;
