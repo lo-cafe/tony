@@ -12,7 +12,8 @@ import {
   FiUser,
   FiHelpCircle,
   FiPlay,
-  FiTrash2,
+  FiCornerLeftUp,
+  FiCornerLeftDown,
   FiUpload,
 } from 'react-icons/fi';
 import ReactFlow, {
@@ -822,6 +823,14 @@ const Story = () => {
           )}
         </OBottomLeft>
       </OverlayWrapper>
+      {(!selectedChatId || !selectedWorkspaceId) && (
+        <BackgroundTip bottomArrow={!!selectedWorkspaceId}>
+          <span>
+            {!selectedWorkspaceId ? <FiCornerLeftUp /> : <FiCornerLeftDown />}
+          </span>
+          Select or create a {!selectedWorkspaceId ? 'workspace' : 'chat'}
+        </BackgroundTip>
+      )}
       {!!selectedChat && (
         <StyledReactFlow
           nodeTypes={nodeTypes}
@@ -858,7 +867,6 @@ const Story = () => {
             nodeColor={(node: ChatNode) => COLORS[node.type as ChatNodeTypes]}
           />
           <Background />
-          {/* <Controls /> */}
         </StyledReactFlow>
       )}
       <div ref={reactFlowWrapper}>
@@ -867,7 +875,6 @@ const Story = () => {
             position={{ x: 0, y: 0 }}
             scale={1}
             onStart={onStartDragToAddNewNode}
-            // onDrag={this.handleDrag}
             onStop={onEndDragToAddNewNode}
             nodeRef={newItemRef}
           >
@@ -890,6 +897,30 @@ const Story = () => {
 };
 
 export default Story;
+
+const BackgroundTip = styled.div<{ bottomArrow?: boolean }>`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.05);
+  z-index: -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #c5c5c5;
+  font-weight: 700;
+  span {
+    left: 24px;
+    font-size: 72px;
+    position: absolute;
+    line-height: 0;
+    top: ${({ bottomArrow }) => (bottomArrow ? 'unset' : '64px')};
+    bottom: ${({ bottomArrow }) => (bottomArrow ? '64px' : 'unset')};
+  }
+`;
 
 const ZoomButton = styled(FixedButton)`
   width: 69px;
