@@ -214,7 +214,7 @@ const StyledCard = styled(Card)<{ state: string; loading: boolean }>`
   top: 72px;
   width: 300px;
   right: 16px;
-  z-index: 10;
+  z-index: 20;
   padding: 18px;
   padding-top: 14px;
   ${({ loading }) =>
