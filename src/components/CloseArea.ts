@@ -10,7 +10,7 @@ const CloseArea = styled.button`
   left: 0;
   background-color: transparent;
   opacity: 0;
-  z-index: 9999;
+  z-index: 20;
 `;
 
 export default CloseArea;

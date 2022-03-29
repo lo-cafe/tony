@@ -15,7 +15,6 @@ interface FixedButtonProps {
   selected?: boolean;
   icon?: React.ReactNode;
   color?: 'add' | 'delete';
-  withButtons?: boolean;
   onValueChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   className?: string;
@@ -52,7 +51,8 @@ const FixedButton: FC<FixedButtonProps> = ({
     func(data);
   };
 
-  const handleClick = (onClick: () => void) => () => {
+  const handleClick = (onClick: () => void) => (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isEditing) return;
     onClick();
   };

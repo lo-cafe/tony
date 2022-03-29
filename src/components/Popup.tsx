@@ -109,7 +109,7 @@ const Wrapper = styled(Card)<{ state: string }>`
   min-width: 188px;
   max-width: 320px;
   max-height: calc(100vh - 32px);
-  z-index: 99999;
+  z-index: 20;
   filter: ${({ state }) =>
     state === 'entering' || state === 'entered' ? 'blur(0px)' : 'blur(50px)'};
 `;

@@ -47,6 +47,7 @@ import CustomEdge from '~/components/CustomEdge';
 import FixedButton from '~/components/FixedButton';
 import ChatNodeCard from '~/components/ChatNodeCard';
 import ConditionNodeCard from '~/components/ConditionNodeCard';
+import FScreenListing from '~/components/FScreenListing';
 import {
   CHAT_NODE_CONDITION_TYPE,
   CHAT_NODE_ANSWER_TYPE,
@@ -55,6 +56,7 @@ import {
   COLORS,
 } from '~/constants/variables';
 import downloadFile from '~/utils/downloadFile';
+import { Optional } from '~/types/utils';
 import {
   initialCharacterData,
   initialChatNodeData,
@@ -67,10 +69,7 @@ initFirebase();
 
 const db = getFirestore();
 
-interface MousePosition {
-  x: number;
-  y: number;
-}
+type WorkspacesNames = Optional<Workspace, 'characters' | 'chats'>;
 
 const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
 const edgeTypes = { button: CustomEdge };
@@ -108,7 +107,7 @@ const Story = () => {
   const altPressed = useKeyPress('AltLeft');
   const updateNodeInternals = useUpdateNodeInternals();
   const data = useRef<DataStructure>(loadedData.current!);
-  const [workspacesNames, _setWorkspacesNames] = useState<Partial<Workspace>[]>(
+  const [workspacesNames, _setWorkspacesNames] = useState<WorkspacesNames[]>(
     data.current.map(({ id, name }) => ({ id, name }))
   );
   const [characters, setCharacters] = useState<Character[]>(data.current[0]?.characters);
@@ -142,7 +141,7 @@ const Story = () => {
   const setChatsNames = (newChats: (old: Partial<Chat>[]) => Partial<Chat>[]) =>
     _setChatsNames((old) => newChats(old).map(({ id, name }) => ({ id, name })));
 
-  const setWorkspacesNames = (newWorkspaces: (old: Partial<Workspace>[]) => Partial<Workspace>[]) =>
+  const setWorkspacesNames = (newWorkspaces: (old: WorkspacesNames[]) => WorkspacesNames[]) =>
     _setWorkspacesNames((old) => newWorkspaces(old).map(({ id, name }) => ({ id, name })));
 
   const getSelectedWorkspace = (obj: DataStructure): Workspace | null =>
@@ -303,7 +302,9 @@ const Story = () => {
   };
 
   const addWorkspace = () => {
-    setWorkspacesNames((old) => [...old, initialWorkspaceData()]);
+    const newWorkspace = initialWorkspaceData();
+    setWorkspacesNames((old) => [...old, newWorkspace]);
+    setSelectedWorkspaceId(newWorkspace.id);
   };
 
   const changeWorkspaceName = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -680,30 +681,30 @@ const Story = () => {
       <OverlayWrapper>
         <OTopLeft>
           <>
-            {workspacesNames.map((w) => (
-              <FixedButton
-                key={w.id}
-                icon={<FiBox />}
-                data={w.id}
-                value={w.name!}
-                selected={w.id === selectedWorkspaceId}
-                onClick={setWorkspace}
-                onValueChange={changeWorkspaceName}
-                onDownload={exportToJson}
-                onDelete={deleteWorkspace}
-              />
-            ))}
-            <FixedButton
-              icon={<FiPlus />}
-              onClick={addWorkspace}
-              color="add"
-              value="New workspace"
-            />
-            <FixedButton
-              icon={<FiUpload />}
-              onFileChange={importFromJson}
-              color="add"
-              value="Import workspace"
+            <FScreenListing
+              listName="Workspaces"
+              items={workspacesNames}
+              icon={<FiBox />}
+              selectedItemId={selectedWorkspaceId}
+              onItemClick={setWorkspace}
+              onItemValueChange={changeWorkspaceName}
+              onItemDelete={deleteWorkspace}
+              onItemDownload={exportToJson}
+              extraOptions={[
+                {
+                  value: 'New workspace',
+                  icon: <FiPlus />,
+                  color: 'add',
+                  onClick: addWorkspace,
+                },
+                {
+                  value: 'Import workspace',
+                  icon: <FiUpload />,
+                  color: 'add',
+                  discrete: true,
+                  onFileChange: importFromJson,
+                },
+              ]}
             />
           </>
         </OTopLeft>
@@ -909,7 +910,7 @@ const OverlayWrapper = styled.div`
     'topLeftUnder topRightUnder topRightUnder'
     '. . .'
     'bottomLeft . .';
-  z-index: 9;
+  z-index: 11;
   position: fixed;
   height: 100%;
   width: 100%;
@@ -951,7 +952,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   position: fixed;
   bottom: 70px;
   left: ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? '-185px' : '-110px')};
-  z-index: 99999;
+  z-index: 10;
   opacity: 0.6;
   transition: opacity 150ms ease-out,
     left ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? 0 : 400)}ms
