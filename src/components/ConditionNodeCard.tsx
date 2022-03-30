@@ -147,6 +147,9 @@ const ConditionHandle = styled(SourceHandle)`
   &:hover {
     transform: translateY(-50%) scale(1.2);
   }
+  &.connecting {
+    animation: ${bounce2} 1600ms infinite linear;
+  }
 `;
 
 // const ConditionHandle = styled(Handle)`
