@@ -700,7 +700,7 @@ const Story = () => {
                 value: 'Import workspace',
                 icon: <FiUpload />,
                 color: 'add',
-                discrete: true,
+                discrete: false,
                 onFileChange: importFromJson,
               },
             ]}
