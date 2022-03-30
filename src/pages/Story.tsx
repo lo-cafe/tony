@@ -895,6 +895,9 @@ const Story = () => {
       <a href="https://discord.gg/YgZSgp8kVR" target="_blank">
         <Discord src={discordIcon} alt="Discord Server" />
       </a>
+      <a href="https://www.craft.do/s/z5nxQvBJx5HdJf" target="_blank">
+        <Help><FiHelpCircle /></Help>
+      </a>
     </>
   );
 };
@@ -906,9 +909,23 @@ const Discord = styled.img`
   right: 235px;
   bottom: 24px;
   z-index: 10;
-  height: 40px;
+  height: 24px;
   opacity: 0.2;
-  transition: opacity 0.2s ease-in-out;
+  transition: opacity 0.2s ease-out;
+  &:hover {
+    opacity: 0.65;
+  }
+`;
+
+const Help = styled.div`
+  position: fixed;
+  right: 235px;
+  bottom: 48px;
+  z-index: 10;
+  height: 32px;
+  font-size: 24px;
+  opacity: 0.2;
+  transition: opacity 0.2s ease-out;
   &:hover {
     opacity: 0.65;
   }
