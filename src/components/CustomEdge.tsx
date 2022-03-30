@@ -1,22 +1,6 @@
 import { getBezierPath, getEdgeCenter, getMarkerEnd } from 'react-flow-renderer';
 import styled from 'styled-components';
-import ReactFlow, {
-  addEdge,
-  FitViewOptions,
-  applyNodeChanges,
-  applyEdgeChanges,
-  Node,
-  EdgeProps,
-  NodeChange,
-  EdgeChange,
-  useKeyPress,
-  MiniMap,
-  updateEdge,
-  Background,
-  useViewport,
-  ReactFlowInstance,
-  useUpdateNodeInternals,
-} from 'react-flow-renderer';
+import { EdgeProps } from 'react-flow-renderer';
 
 const foreignObjectSize = 40;
 
