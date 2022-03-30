@@ -904,7 +904,7 @@ const Discord = styled.img`
   position: fixed;
   right: 235px;
   bottom: 24px;
-  z-index: 11;
+  z-index: 10;
   height: 40px;
   opacity: 0.2;
   transition: opacity 0.2s ease-in-out;
