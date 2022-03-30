@@ -681,6 +681,7 @@ const Story = () => {
       <OverlayWrapper>
         <OTopLeft>
           <FScreenListing
+            numberOfRecentItems={2}
             listName="Workspaces"
             items={workspacesNames}
             icon={<FiBox />}
