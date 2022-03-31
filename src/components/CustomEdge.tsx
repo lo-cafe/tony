@@ -39,7 +39,13 @@ const CustomEdge: FC<EdgeProps> = ({
 
   return (
     <>
-      <path
+      <VisibleEdge
+        style={style}
+        className="react-flow__edge-path"
+        d={edgePath}
+        markerEnd={markerEnd as string}
+      />
+      <HiddenEdge
         id={id}
         style={style}
         className="react-flow__edge-path"
@@ -65,6 +71,21 @@ const CustomEdge: FC<EdgeProps> = ({
 };
 
 export default CustomEdge;
+
+const VisibleEdge = styled.path``;
+
+const HiddenEdge = styled.path`
+  fill: none;
+  stroke: transparent !important;
+  stroke-dasharray: 0 !important;
+  stroke-width: 12;
+  animation: none !important;
+  cursor: pointer;
+  transition: stroke 0.2s ease-out;
+  &:hover {
+    stroke: rgba(0,0,0,.05) !important;
+  }
+`;
 
 const EdgeButton = styled.button`
   width: 20px;
