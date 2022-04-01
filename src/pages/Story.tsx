@@ -960,6 +960,7 @@ const Story = () => {
           onInit={setReactFlowInstance}
           onConnect={onConnect}
           selectNodesOnDrag={false}
+          multiSelectionKeyCode={['Meta', 'Control']}
           minZoom={0.1}
           maxZoom={4}
         >
