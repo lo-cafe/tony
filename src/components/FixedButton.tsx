@@ -67,6 +67,11 @@ const FixedButton: FC<FixedButtonProps> = ({
     _setExpandedDelete(expanded);
   };
 
+  const onInputEnter = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsEditing(false);
+  };
+
   const fileId = nanoid();
 
   return (
@@ -91,7 +96,9 @@ const FixedButton: FC<FixedButtonProps> = ({
         </>
       )}
       {icon}
-      {isEditing ? <PillInput name={data} value={value} onChange={onValueChange} /> : value}
+      <form onSubmit={onInputEnter}>
+        {isEditing ? <PillInput name={data} value={value} onChange={onValueChange} /> : value}
+      </form>
       {rightIcon}
       {onValueChange && (
         <FixedButtonInnerButton
