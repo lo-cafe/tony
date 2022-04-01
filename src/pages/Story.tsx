@@ -76,7 +76,7 @@ type ChatNames = Optional<Chat, 'nodes' | 'edges'>;
 
 const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
 const edgeTypes = { button: CustomEdge };
-const multiselectKeys = ['Meta', 'Control']
+const multiselectKeys = ['Meta', 'Control'];
 
 const _loadOrSave = (data?: DataStructure): DataStructure => {
   if (typeof window === 'undefined') return [];
@@ -260,8 +260,8 @@ const Story = () => {
           : item
       )
     );
-    if (type === CHAT_NODE_CONDITION_TYPE)
-      setEdges(edges.filter((edg) => edg.source !== id && edg.target !== id));
+    // if (type === CHAT_NODE_CONDITION_TYPE)
+    setEdges(edges.filter((edg) => edg.source !== id && edg.target !== id));
     updateNodeInternals(id);
   };
 
@@ -513,13 +513,13 @@ const Story = () => {
           },
         },
       ]);
-      const relatedEdges = getRelatedEdges(node.id).map((e) => ({
-        ...e,
-        id: nanoid(ID_SIZE),
-        source: e.source === node.id ? newNodeId : e.source,
-        target: e.target === node.id ? newNodeId : e.target,
-      }));
-      setEdges((eds) => [...eds, ...relatedEdges]);
+      // const relatedEdges = getRelatedEdges(node.id).map((e) => ({
+      //   ...e,
+      //   id: nanoid(ID_SIZE),
+      //   source: e.source === node.id ? newNodeId : e.source,
+      //   target: e.target === node.id ? newNodeId : e.target,
+      // }));
+      // setEdges((eds) => [...eds, ...relatedEdges]);
       return true;
     },
     [altPressed, setNodes]
