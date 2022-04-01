@@ -581,7 +581,7 @@ const Story = () => {
     }, 1);
     const newNode = initialChatNodeData();
     newNode.position = reactFlowInstance.project({
-      x: info.x - 140,
+      x: info.x - 139,
       y: info.y + window.innerHeight - 70 - 40 - 170,
     });
     setNodes((nds) => [...nds, newNode]);
@@ -615,8 +615,12 @@ const Story = () => {
             case CHAT_NODE_CONDITION_TYPE:
               const conditionNodeIds = getLinkedNodes(nd, 'condition').map((x) => x.id);
               return conditionNodeIds.every((id) => playModeAnswersIds.current?.includes(id))
-                ? getLinkedNodes(nd, 'yes').map(x => x.type === CHAT_NODE_CONDITION_TYPE ? whatToShow([x]) : x).flat()
-                : getLinkedNodes(nd, 'no').map(x => x.type === CHAT_NODE_CONDITION_TYPE ? whatToShow([x]) : x).flat();
+                ? getLinkedNodes(nd, 'yes')
+                    .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? whatToShow([x]) : x))
+                    .flat()
+                : getLinkedNodes(nd, 'no')
+                    .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? whatToShow([x]) : x))
+                    .flat();
             default:
               return nd;
           }
@@ -921,10 +925,10 @@ const Story = () => {
           )}
         </OBottomLeft>
       </OverlayWrapper>
-      {(!selectedChatId || !selectedWorkspaceId) && (
+      {(!selectedChatId || !selectedWorkspaceId || !selectedWorkspace || !selectedChat) && (
         <BackgroundTip bottomArrow={!!selectedWorkspaceId}>
           <span>{!selectedWorkspaceId ? <FiCornerLeftUp /> : <FiCornerLeftDown />}</span>
-          Select or create a {!selectedWorkspaceId ? 'workspace' : 'chat'}
+          Select or create a {!selectedWorkspaceId || !selectedWorkspace ? 'workspace' : 'chat'}
         </BackgroundTip>
       )}
       {!!selectedChat && (
@@ -1123,7 +1127,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
     left ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? 0 : 400)}ms
       cubic-bezier(0.23, 1.48, 0.325, 0.945);
   height: 250px;
-  width: 170px;
+  width: 175px;
   padding-top: 40px;
   ${({ isAddingNewNode }) =>
     isAddingNewNode !== 'ending' &&
@@ -1139,7 +1143,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
     }
   }
   & > * {
-    margin-left: -40px;
+    margin-left: -39px;
     transition: ${({ isAddingNewNode }) =>
       isAddingNewNode ? 'none' : 'transform 200ms ease-out'} !important;
     transform: rotate(90deg);

@@ -39,7 +39,9 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps>> = memo(
             <Id>{id}</Id>
           </IdTag>
         </ItemTitleBar>
-        <ItemBody>{data.message}</ItemBody>
+        <ItemWrapper>
+          <ItemBody>{data.message}</ItemBody>
+        </ItemWrapper>
         <ItemBottomBar>
           <ContextMenuInjector
             options={data.characters?.map((char) => ({
@@ -210,7 +212,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   background: white;
   border-radius: 16px;
   width: 250px;
-  height: 170px;
+  height: 175px;
   display: flex;
   margin: 0;
   gap: 8px;
@@ -279,7 +281,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   }
 `;
 
-const ItemBody = styled.div`
+const ItemWrapper = styled.div`
   background: #f3f3f3;
   padding: 8px 12px;
   border-radius: 8px;
@@ -287,7 +289,10 @@ const ItemBody = styled.div`
   flex: 1;
   width: 100%;
   text-align: left;
-  word-break: break-all;
+  word-break: break-word;
+`;
+
+const ItemBody = styled.div`
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
