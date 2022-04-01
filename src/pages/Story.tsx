@@ -76,6 +76,7 @@ type ChatNames = Optional<Chat, 'nodes' | 'edges'>;
 
 const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
 const edgeTypes = { button: CustomEdge };
+const multiselectKeys = ['Meta', 'Control']
 
 const _loadOrSave = (data?: DataStructure): DataStructure => {
   if (typeof window === 'undefined') return [];
@@ -960,7 +961,7 @@ const Story = () => {
           onInit={setReactFlowInstance}
           onConnect={onConnect}
           selectNodesOnDrag={false}
-          multiSelectionKeyCode={['Meta', 'Control']}
+          multiSelectionKeyCode={multiselectKeys}
           minZoom={0.1}
           maxZoom={4}
         >
