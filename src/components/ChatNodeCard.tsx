@@ -289,7 +289,6 @@ const ItemWrapper = styled.div`
   flex: 1;
   width: 100%;
   text-align: left;
-  word-break: break-word;
 `;
 
 const ItemBody = styled.div`
@@ -297,6 +296,7 @@ const ItemBody = styled.div`
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  word-break: break-word;
 `;
 
 const ItemTitle = styled.div`
