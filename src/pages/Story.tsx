@@ -153,7 +153,7 @@ const Story = () => {
   const getSelectedChat = (obj: DataStructure): Chat | null =>
     getSelectedWorkspace(obj)?.chats.find((c) => c.id === selectedChatId) || null;
 
-  const getRelatedEdges = (nodeId: ID, edges: Edge[]) =>
+  const getRelatedEdges = (nodeId: ID) =>
     edges.filter((e) => e.source === nodeId || e.target === nodeId);
 
   const selectedWorkspace = getSelectedWorkspace(data.current);
@@ -512,7 +512,7 @@ const Story = () => {
           },
         },
       ]);
-      const relatedEdges = getRelatedEdges(node.id, edges).map((e) => ({
+      const relatedEdges = getRelatedEdges(node.id).map((e) => ({
         ...e,
         id: nanoid(ID_SIZE),
         source: e.source === node.id ? newNodeId : e.source,
@@ -599,7 +599,7 @@ const Story = () => {
       return setWhatToPlay(null);
     }
     const getLinkedNodes = (node: ChatNode, handler: 'yes' | 'no' | 'condition' | 'a' = 'a') => {
-      const relatedEdges = getRelatedEdges(node.id, edges);
+      const relatedEdges = getRelatedEdges(node.id);
       const nextNodes = nodes.filter((x) =>
         relatedEdges
           .filter((x) => x.source === node.id && x.sourceHandle === handler)
@@ -608,15 +608,15 @@ const Story = () => {
       );
       return nextNodes;
     };
-    const whatToShow = (rawNodes: ChatNode[]) =>
+    const whatToShow = (rawNodes: ChatNode[]): ChatNode[] =>
       rawNodes
         .map((nd) => {
           switch (nd.type) {
             case CHAT_NODE_CONDITION_TYPE:
               const conditionNodeIds = getLinkedNodes(nd, 'condition').map((x) => x.id);
               return conditionNodeIds.every((id) => playModeAnswersIds.current?.includes(id))
-                ? getLinkedNodes(nd, 'yes')
-                : getLinkedNodes(nd, 'no');
+                ? getLinkedNodes(nd, 'yes').map(x => x.type === CHAT_NODE_CONDITION_TYPE ? whatToShow([x]) : x).flat()
+                : getLinkedNodes(nd, 'no').map(x => x.type === CHAT_NODE_CONDITION_TYPE ? whatToShow([x]) : x).flat();
             default:
               return nd;
           }
@@ -652,6 +652,102 @@ const Story = () => {
   const resetZoom = () => {
     if (!reactFlowInstance) return;
     reactFlowInstance.zoomTo(1, { duration: 500 });
+  };
+
+  const isConnectionValid = (
+    sourceId: ID,
+    targetId: ID,
+    sourceHandle: string | null = 'a'
+  ): boolean => {
+    const sourceNode = nodes.find((x) => x.id === sourceId);
+    const targetNode = nodes.find((x) => x.id === targetId);
+    if (!sourceNode || !targetNode) return false;
+
+    const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
+      const rules = {
+        [CHAT_NODE_TEXT_TYPE]: () =>
+          targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+          (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
+        [CHAT_NODE_ANSWER_TYPE]: () =>
+          targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
+        [CHAT_NODE_CONDITION_TYPE]: () =>
+          sourceHandle === 'condition'
+            ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
+            : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+              (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
+      };
+      return rules[internalSourceNode.type as keyof typeof rules]();
+    };
+
+    const getNextNodes = (
+      node: ChatNode,
+      handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
+    ) => {
+      const relatedEdges = getRelatedEdges(node.id);
+      const nextNodes = nodes.filter((x) =>
+        relatedEdges
+          .filter((x) => x.source === node.id && x.sourceHandle === handler)
+          .map((e) => e.target)
+          .includes(x.id)
+      );
+      return nextNodes;
+    };
+
+    const getActualIsItAMatch = (
+      childrenNodes: ChatNode[],
+      _base: ChatNode[] = [],
+      alternateSource?: ChatNode
+    ): boolean => {
+      if (childrenNodes.length === 0) return true;
+      const base: ChatNode[] = [..._base];
+      const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
+      const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
+      base.push(...normalNodes);
+      if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
+      let yesChildren: ChatNode[] = [];
+      let noChildren: ChatNode[] = [];
+      conditionNodes.forEach((nd) => {
+        yesChildren =
+          nd.id === sourceId && sourceHandle === 'yes'
+            ? [targetNode, ...getNextNodes(nd, 'yes')]
+            : getNextNodes(nd, 'yes');
+        noChildren =
+          nd.id === sourceId && sourceHandle === 'no'
+            ? [targetNode, ...getNextNodes(nd, 'no')]
+            : getNextNodes(nd, 'no');
+      });
+      return (
+        getActualIsItAMatch(yesChildren, base, alternateSource) &&
+        getActualIsItAMatch(noChildren, base, alternateSource)
+      );
+    };
+
+    const findNearestNormalParents = (node: ChatNode) => {
+      const relatedEdges = getRelatedEdges(node.id);
+      const parentNodes = nodes.filter((x) =>
+        relatedEdges
+          .filter((e) => e.target === node.id)
+          .map((e) => e.source)
+          .includes(x.id)
+      );
+      const newParentNodes: ChatNode[] = parentNodes
+        .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? findNearestNormalParents(x) : x))
+        .flat();
+      return newParentNodes;
+    };
+
+    if (sourceNode.type !== CHAT_NODE_CONDITION_TYPE) {
+      return getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode)]);
+    }
+
+    if (sourceHandle === 'condition') {
+      return isItAMatch(sourceNode, [targetNode, ...getNextNodes(sourceNode, sourceHandle)]);
+    }
+
+    return (
+      getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
+      findNearestNormalParents(sourceNode).every((x) => getActualIsItAMatch(getNextNodes(x), [], x))
+    );
   };
 
   return (
@@ -841,6 +937,7 @@ const Story = () => {
               ...node.data,
               setCharacter,
               characters: characters,
+              isConnectionValid,
             },
           }))}
           edges={edges.map((edge) => ({
@@ -896,7 +993,9 @@ const Story = () => {
         <Discord src={discordIcon} alt="Discord Server" />
       </a>
       <a href="https://www.craft.do/s/z5nxQvBJx5HdJf" target="_blank">
-        <Help><FiHelpCircle /></Help>
+        <Help>
+          <FiHelpCircle />
+        </Help>
       </a>
     </>
   );

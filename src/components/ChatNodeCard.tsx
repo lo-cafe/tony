@@ -1,34 +1,27 @@
 import { useState, useEffect, memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import {
-  FiMessageSquare,
-  FiTrash2,
-  FiPlus,
-  FiUser,
-  FiList,
-  FiLink,
-  FiHelpCircle,
-} from 'react-icons/fi';
-import { Handle, Position, Node } from 'react-flow-renderer';
+import { FiMessageSquare, FiUser, FiList } from 'react-icons/fi';
+import { Handle, Position, Node, Connection } from 'react-flow-renderer';
 
 import lace from '~/components/lace.svg';
 import laceOrange from '~/components/lace-orange.svg';
 import ContextMenuInjector from '~/components/ContextMenuInjector';
 import { ChatNodeData, ID, Character } from '~/types/data';
-import {
-  CHAT_NODE_CONDITION_TYPE,
-  CHAT_NODE_ANSWER_TYPE,
-  CHAT_NODE_TEXT_TYPE,
-} from '~/constants/variables';
+import { CHAT_NODE_ANSWER_TYPE } from '~/constants/variables';
 
 interface ChatNodeCardProps extends ChatNodeData {
   fadeOut?: boolean;
   setCharacter?: (itemId: ID, charId: ID) => void;
   characters?: Character[];
+  isConnectionValid?: (source: ID, target: ID, sourceHandle: string | null) => boolean;
 }
 
 const ChatNodeCard: FC<Node<ChatNodeCardProps>> = memo(
   ({ type, id, data, selected, className, connectable }) => {
+    const isValidConnection = (connection: Connection) => {
+      if (!data.isConnectionValid || !connection.source || !connection.target) return true;
+      return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle);
+    };
     return (
       <Item
         // fadedOut={fadedOut}
@@ -64,7 +57,13 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps>> = memo(
             </Tag>
           </ContextMenuInjector>
         </ItemBottomBar>
-        <SourceHandle type="source" isConnectable={connectable} position={Position.Bottom} id="a" />
+        <SourceHandle
+          type="source"
+          isConnectable={connectable}
+          isValidConnection={isValidConnection}
+          position={Position.Bottom}
+          id="a"
+        />
       </Item>
     );
   }

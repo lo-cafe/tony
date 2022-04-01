@@ -1,16 +1,22 @@
 import { useState, useEffect, memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FiHelpCircle } from 'react-icons/fi';
-import { Handle, Position, Node } from 'react-flow-renderer';
+import { Handle, Position, Node, Connection } from 'react-flow-renderer';
 
 import lace from '~/components/lace-black.svg';
+import { ID } from '~/types/data';
 
 interface ConditionNodeCardProps {
   fadeOut?: boolean;
+  isConnectionValid?: (source: ID, target: ID, sourceHandle: string | null) => boolean;
 }
 
 const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>> = memo(
   ({ id, data, selected, className }) => {
+    const isValidConnection = (connection: Connection) => {
+      if (!data.isConnectionValid || !connection.source || !connection.target) return true;
+      return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle);
+    };
     return (
       <Item
         // fadedOut={fadedOut}
@@ -21,7 +27,7 @@ const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>
         <TargetHandle type="target" position={Position.Top} />
         <ItemTitleBar>
           <ItemTitle>
-            <ConditionHandle type="source" position={Position.Left} id="condition" />
+            <ConditionHandle isValidConnection={isValidConnection} type="source" position={Position.Left} id="condition" />
             <FiHelpCircle />
             Condition
           </ItemTitle>
@@ -32,11 +38,17 @@ const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>
         <ResultsWrapper>
           <div>
             YES
-            <SourceHandle type="source" position={Position.Bottom} id="yes" />
+            <SourceHandle
+              type="source"
+              isValidConnection={isValidConnection}
+              position={Position.Bottom}
+              id="yes"
+            />
           </div>
           <div>
             NO
             <SourceHandle
+              isValidConnection={isValidConnection}
               type="source"
               position={Position.Bottom}
               style={{ background: 'red' }}
