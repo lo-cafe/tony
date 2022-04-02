@@ -1124,22 +1124,43 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   bottom: 70px;
   left: ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? '-185px' : '-110px')};
   z-index: 10;
-  opacity: 0.6;
+  /* opacity: 0.6; */
   transition: opacity 150ms ease-out,
     left ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? 0 : 400)}ms
       cubic-bezier(0.23, 1.48, 0.325, 0.945);
   height: 250px;
   width: 175px;
   padding-top: 40px;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 0;
+    width: calc(100% - 2px);
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0);
+    backdrop-filter: blur(40px);
+    border-radius: 16px;
+    z-index: -1;
+  }
+  & > div {
+    opacity: 0.5;
+  }
   ${({ isAddingNewNode }) =>
     isAddingNewNode !== 'ending' &&
     css`
       &:hover {
-        opacity: 0.8;
+        & > div {
+          opacity: 0.7;
+        }
+        /* opacity: 0.8; */
         left: -100px;
       }
     `}
   &.react-draggable-dragging {
+    &::before {
+      transform: rotate(90deg);
+    }
     & > * {
       transform: rotate(0deg);
     }
@@ -1147,7 +1168,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   & > * {
     margin-left: -39px;
     transition: ${({ isAddingNewNode }) =>
-      isAddingNewNode ? 'none' : 'transform 200ms ease-out'} !important;
+      isAddingNewNode ? 'none' : 'opacity 200ms ease-out, transform 200ms ease-out'} !important;
     transform: rotate(90deg);
   }
 `;
