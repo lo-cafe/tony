@@ -223,6 +223,7 @@ const Story = () => {
 
   const updateMirrors = () => {
     setWorkspacesNames(() => data.current || []);
+    setCharacters(() => getSelectedWorkspace(data.current)?.characters || []);
     setChatsNames(() => getSelectedWorkspace(data.current)?.chats || []);
     setNodes(selectedChatId ? getSelectedChat(data.current)?.nodes || [] : []);
     setEdges(selectedChatId ? getSelectedChat(data.current)?.edges || [] : []);
