@@ -90,7 +90,6 @@ const _loadOrSave = (data?: DataStructure): DataStructure => {
 
 const Story = () => {
   const loggedUserId = useUserStore((s) => s.uid);
-  const debounceCloudSave = useRef<any>(null);
 
   const loadOrSave = (newData?: DataStructure) => {
     if (newData) {
@@ -106,11 +105,17 @@ const Story = () => {
     return _loadOrSave();
   };
 
-  const loadedData = useRef(loadOrSave());
-
   const altPressed = useKeyPress('AltLeft');
   const updateNodeInternals = useUpdateNodeInternals();
+
+  const loadedData = useRef(loadOrSave());
   const data = useRef<DataStructure>(loadedData.current!);
+  const reactFlowWrapper = useRef(null);
+  const lastCopied = useRef<null | Node>(null);
+  const playModeAnswersIds = useRef<ID[]>([]);
+  const newItemRef = useRef(null);
+  const debounceCloudSave = useRef<any>(null);
+
   const [workspacesNames, _setWorkspacesNames] = useState<WorkspacesNames[]>(
     data.current.map(({ id, name }) => ({ id, name }))
   );
@@ -137,10 +142,6 @@ const Story = () => {
   );
 
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
-  const reactFlowWrapper = useRef(null);
-  const lastCopied = useRef<null | Node>(null);
-  const playModeAnswersIds = useRef<ID[]>([]);
-  const newItemRef = useRef(null);
 
   const setChatsNames = (newChats: (old: ChatNames[]) => ChatNames[]) =>
     _setChatsNames((old) => newChats(old).map(({ id, name }) => ({ id, name })));
