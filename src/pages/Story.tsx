@@ -14,6 +14,7 @@ import {
   FiCornerLeftUp,
   FiCornerLeftDown,
   FiUpload,
+  FiHeart,
 } from 'react-icons/fi';
 import ReactFlow, {
   addEdge,
@@ -30,7 +31,7 @@ import ReactFlow, {
   useUpdateNodeInternals,
 } from 'react-flow-renderer';
 import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
-import { lighten, getLuminance } from 'polished';
+import { lighten, getLuminance, darken } from 'polished';
 
 import useUserStore, { ThemeTypes } from '~/instances/userStore';
 
@@ -44,7 +45,6 @@ import {
   ChatNodeTypes,
 } from '~/types/data';
 
-import capitalize from '~/utils/capitalize';
 import discordIcon from '~/components/discord.svg';
 import LoginWidget from '~/components/LoginWidget';
 import SettingsWidget from '~/components/SettingsWidget';
@@ -69,6 +69,7 @@ import {
   initialWorkspaceData,
 } from '~/constants/initialData';
 import { initFirebase } from '~/instances/firebase';
+import colors from '~/constants/colors';
 
 initFirebase();
 
@@ -990,7 +991,9 @@ const Story = () => {
           maxZoom={4}
         >
           <StyledMiniMap
-            maskColor={getLuminance(theme.colors.bg) > 0.4 ? undefined : lighten(0.2, theme.colors.bg)}
+            maskColor={
+              getLuminance(theme.colors.bg) > 0.4 ? undefined : lighten(0.2, theme.colors.bg)
+            }
             nodeBorderRadius={16}
             nodeColor={(node: ChatNode) =>
               theme.nodeColors[
@@ -1032,6 +1035,11 @@ const Story = () => {
           <FiHelpCircle />
         </Help>
       </a>
+      <a href="https://www.paypal.com/donate/?hosted_button_id=HWYQF3KTYDY46" target="_blank">
+        <Donate>
+          <FiHeart />
+        </Donate>
+      </a>
     </>
   );
 };
@@ -1040,29 +1048,35 @@ export default Story;
 
 const Discord = styled.img`
   position: fixed;
-  right: 235px;
+  right: 230px;
   bottom: 24px;
   z-index: 10;
   height: 24px;
-  opacity: 0.2;
+  opacity: 0.5;
   transition: opacity 0.2s ease-out;
   &:hover {
-    opacity: 0.65;
+    opacity: 1;
   }
 `;
 
 const Help = styled.div`
   position: fixed;
-  right: 235px;
+  right: 230px;
   bottom: 48px;
   z-index: 10;
   height: 32px;
   font-size: 24px;
-  opacity: 0.2;
+  opacity: 0.5;
   transition: opacity 0.2s ease-out;
+  color: ${({ theme }) => (getLuminance(theme.colors.bg) > 0.4 ? '#000' : '#fff')};
   &:hover {
-    opacity: 0.65;
+    opacity: 1;
   }
+`;
+
+const Donate = styled(Help)`
+  bottom: 77px;
+  color: red;
 `;
 
 const BackgroundTip = styled.div<{ bottomArrow?: boolean }>`
@@ -1282,7 +1296,10 @@ const TypeChooser = styled.button<{ selected: boolean }>`
       color: gray !important;
     `};
   &:hover {
-    background: ${({ theme }) => lighten(0.1, theme.colors.inputBg)};
+    background: ${({ theme }) =>
+      getLuminance(theme.colors.bg) > 0.4
+        ? darken(0.05, theme.colors.inputBg)
+        : lighten(0.1, theme.colors.inputBg)};
   }
 `;
 
@@ -1354,13 +1371,11 @@ const SidePanel = styled.div<{ color: string }>`
   flex-direction: column;
   gap: 16px;
   backdrop-filter: blur(40px);
-  ${ItemTitleBar} {
+  ${ItemTitleBar}, ${IdTag} {
     background: ${({ color }) => color};
+    color: ${({ color }) => (getLuminance(color) > 0.4 ? colors.light.font : colors.dark.font)};
   }
-  ${IdTag} {
-    color: ${({ color }) => color};
-  }
-  ${TypeChooser} {
+  ${IdTag}, ${TypeChooser} {
     color: ${({ color }) => color};
   }
   -webkit-user-drag: none;
