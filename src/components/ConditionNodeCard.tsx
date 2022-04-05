@@ -78,7 +78,7 @@ const ResultsWrapper = styled.div`
   flex: 1;
   & > div {
     background: ${({ theme }) =>
-      getLuminance(theme.colors.bg) > 0.3
+      getLuminance(theme.colors.bg) > 0.4
         ? darken(0.2, theme.colors.bg)
         : lighten(0.2, theme.colors.bg)};
     /* background: ${({ theme }) => theme.colors.conditionResultWrapperBg}; */
@@ -90,7 +90,7 @@ const ResultsWrapper = styled.div`
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: ${({ theme }) => (getLuminance(theme.colors.bg) > 0.3 ? light.font : dark.font)};
+    color: ${({ theme }) => (getLuminance(theme.colors.bg) > 0.4 ? light.font : dark.font)};
     font-family: 'Roboto Mono', monospace;
     flex: 1;
   }
@@ -166,7 +166,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
 `;
 
 const ConditionHandle = styled(SourceHandle)`
-  background: ${({ theme }) => getLuminance(theme.colors.cardBg) > 0.3 ? '#424242' : '#f5f5f5'};
+  background: ${({ theme }) => getLuminance(theme.colors.cardBg) > 0.4 ? '#424242' : '#f5f5f5'};
   border-color: ${({ theme }) => theme.colors.cardBg};
   left: -27px;
   &:hover {
@@ -286,7 +286,7 @@ const ItemTitleBar = styled.div`
   border-radius: 8px;
   text-transform: capitalize;
   color: ${({ theme }) =>
-    getLuminance(theme.nodeColors.conditionNode) > 0.3 ? light.font : dark.font};
+    getLuminance(theme.nodeColors.conditionNode) > 0.4 ? light.font : dark.font};
   display: flex;
   justify-content: space-between;
   padding-right: 8px;

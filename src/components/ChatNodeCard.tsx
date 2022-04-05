@@ -231,11 +231,11 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
     color: ${({ cardType, theme }) =>
       getLuminance(
         cardType === 'answer' ? theme.nodeColors.answerNode : theme.nodeColors.textNode
-      ) > 0.3
+      ) > 0.4
         ? colors.light.font
         : colors.dark.font};
     background: ${({ cardType, theme }) =>
-      cardType === 'answer' ? darken(0.1, theme.nodeColors.answerNode) : theme.nodeColors.textNode};
+      cardType === 'answer' ? theme.nodeColors.answerNode : theme.nodeColors.textNode};
   }
   ${Tag}, ${SourceHandle} {
     &:hover {

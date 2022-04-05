@@ -12,7 +12,7 @@ const Button = styled.button<{ red?: boolean }>`
   border: none;
   padding: 0 16px;
   color: ${({ theme }) =>
-    getLuminance(theme.nodeColors.accent) > 0.3 ? colors.light.font : colors.dark.font};
+    getLuminance(theme.nodeColors.accent) > 0.4 ? colors.light.font : colors.dark.font};
   width: 100%;
   font-weight: 700;
   cursor: pointer;

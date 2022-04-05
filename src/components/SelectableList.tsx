@@ -96,7 +96,7 @@ const OptionButton = styled.button`
     &:hover {
       background-color: ${({ theme }) => theme.nodeColors.accent};
       color: ${({ theme }) =>
-        getLuminance(theme.nodeColors.accent) > 0.3 ? colors.light.font : colors.dark.font})};
+        getLuminance(theme.nodeColors.accent) > 0.4 ? colors.light.font : colors.dark.font})};
     }
   }
 `;

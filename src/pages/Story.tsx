@@ -990,7 +990,7 @@ const Story = () => {
           maxZoom={4}
         >
           <StyledMiniMap
-            maskColor={getLuminance(theme.colors.bg) > 0.3 ? undefined : lighten(0.2, theme.colors.bg)}
+            maskColor={getLuminance(theme.colors.bg) > 0.4 ? undefined : lighten(0.2, theme.colors.bg)}
             nodeBorderRadius={16}
             nodeColor={(node: ChatNode) =>
               theme.nodeColors[
