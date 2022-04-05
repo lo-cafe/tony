@@ -56,15 +56,18 @@ const Appearence = () => {
           alt="light"
         />
       </ColorsWrapper>
-      <Title>{mirrorColors ? 'Colors' : 'Light colors'}</Title>
-      <label>
-        Mirror colors
-        <input
-          checked={mirrorColors}
-          onChange={(e) => setMirrorColors(e.target.checked)}
-          type="checkbox"
-        />
-      </label>
+      <TitleWrapper>
+        <Title>{mirrorColors ? 'Colors' : 'Light colors'}</Title>
+        <Label>
+          UNIFY COLORS
+          <input
+            checked={mirrorColors}
+            onChange={(e) => setMirrorColors(e.target.checked)}
+            type="checkbox"
+          />
+        </Label>
+      </TitleWrapper>
+
       <ColorsWrapper>
         <div>
           Accent
@@ -142,6 +145,20 @@ export default Appearence;
 
 const StyledButton = styled(Button)`
   margin-top: 16px;
+`;
+
+const TitleWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+`;
+
+const Label = styled.label`
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
 `;
 
 const Title = styled.div`
