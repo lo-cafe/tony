@@ -266,5 +266,3 @@ const StyledInput = styled.input`
     background: ${({ theme }) => lighten(0.1, theme.colors.inputBg)};
   }
 `;
-
-
