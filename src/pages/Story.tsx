@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import styled, { css, keyframes } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash/cloneDeep';
-import merge from 'lodash/merge';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
 import {
   FiMessageSquare,
@@ -30,8 +29,10 @@ import ReactFlow, {
   ReactFlowInstance,
   useUpdateNodeInternals,
 } from 'react-flow-renderer';
-import { getFirestore, getDoc, setDoc, doc, onSnapshot } from 'firebase/firestore';
-import useUserStore from '~/instances/userStore';
+import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
+import { lighten } from 'polished';
+
+import useUserStore, { ThemeTypes } from '~/instances/userStore';
 
 import {
   ID,
@@ -43,6 +44,7 @@ import {
   ChatNodeTypes,
 } from '~/types/data';
 
+import capitalize from '~/utils/capitalize';
 import discordIcon from '~/components/discord.svg';
 import LoginWidget from '~/components/LoginWidget';
 import CustomEdge from '~/components/CustomEdge';
@@ -77,6 +79,7 @@ type ChatNames = Optional<Chat, 'nodes' | 'edges'>;
 const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
 const edgeTypes = { button: CustomEdge };
 const multiselectKeys = ['Meta', 'Control'];
+const themes: ThemeTypes[] = ['light', 'dark', 'auto'];
 
 const _loadOrSave = (data?: DataStructure): DataStructure => {
   if (typeof window === 'undefined') return [];
@@ -89,7 +92,10 @@ const _loadOrSave = (data?: DataStructure): DataStructure => {
 };
 
 const Story = () => {
+  const theme = useTheme();
   const loggedUserId = useUserStore((s) => s.uid);
+  const setTheme = useUserStore((s) => s.setTheme);
+  const currentTheme = useUserStore((s) => s.theme);
 
   const loadOrSave = (newData?: DataStructure) => {
     if (newData) {
@@ -833,6 +839,11 @@ const Story = () => {
         </OTopLeftUnder>
         <OTopRight>
           <FixedButton
+            onClick={() => setTheme(themes[themes.indexOf(currentTheme) + 1] || themes[0])}
+            color="add"
+            value={capitalize(currentTheme)}
+          />
+          <FixedButton
             disabled={!selectedNodes || selectedNodes.length !== 1}
             icon={<FiPlay />}
             onClick={play}
@@ -854,7 +865,16 @@ const Story = () => {
         </OTopRight>
         <OTopRightUnder>
           {selectedNodes && selectedNodes.length === 1 && (
-            <SidePanel color={COLORS[selectedNodes[0].type as ChatNodeTypes]}>
+            <SidePanel
+              color={
+                theme.nodeColors[
+                  COLORS[selectedNodes[0].type as ChatNodeTypes] as
+                    | 'answerNode'
+                    | 'textNode'
+                    | 'conditionNode'
+                ]
+              }
+            >
               <SidePanelContent>
                 <ItemTitleBar>
                   <ItemTitle>
@@ -968,8 +988,13 @@ const Story = () => {
           maxZoom={4}
         >
           <StyledMiniMap
+            maskColor={lighten(0.2, theme.colors.bg)}
             nodeBorderRadius={16}
-            nodeColor={(node: ChatNode) => COLORS[node.type as ChatNodeTypes]}
+            nodeColor={(node: ChatNode) =>
+              theme.nodeColors[
+                COLORS[node.type as ChatNodeTypes] as 'answerNode' | 'textNode' | 'conditionNode'
+              ]
+            }
           />
           <Background />
         </StyledReactFlow>
@@ -1044,13 +1069,13 @@ const BackgroundTip = styled.div<{ bottomArrow?: boolean }>`
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: ${({ theme }) => theme.colors.bg};
   z-index: -1;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 48px;
-  color: #c5c5c5;
+  color: gray;
   font-weight: 700;
   span {
     left: 24px;
@@ -1070,6 +1095,7 @@ const ZoomButton = styled(FixedButton)`
 
 const StyledMiniMap = styled(MiniMap)`
   border-radius: 16px;
+  background: ${({ theme }) => lighten(0.1, theme.colors.bg)} !important;
 `;
 
 const OverlayWrapper = styled.div`
@@ -1178,6 +1204,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
 const StyledReactFlow = styled(ReactFlow)`
   width: 100%;
   height: 100vh;
+  background: ${({ theme }) => theme.colors.bg};
 `;
 
 const PlayModeWrapper = styled.div`
@@ -1241,7 +1268,7 @@ const TypeChooser = styled.button<{ selected: boolean }>`
   align-items: center;
   margin: 5px;
   font-size: 16px;
-  background: #f3f3f3;
+  background: ${({ theme }) => theme.colors.inputBg};
   border-radius: 5px;
   padding: 8px;
   gap: 4px;
@@ -1254,7 +1281,7 @@ const TypeChooser = styled.button<{ selected: boolean }>`
       color: gray !important;
     `};
   &:hover {
-    background: #e3e3e3;
+    background: ${({ theme }) => lighten(0.1, theme.colors.inputBg)};
   }
 `;
 
@@ -1269,8 +1296,9 @@ const Textarea = styled.textarea`
   width: 100%;
   border: none;
   border-radius: 8px;
-  background: #f3f3f3;
+  background: ${({ theme }) => theme.colors.inputBg};
   padding: 10px;
+  color: ${({ theme }) => theme.colors.font};
   font-size: 14px;
   outline: none;
   font-family: inherit;
@@ -1315,11 +1343,11 @@ const IdTag = styled.div`
 
 const SidePanel = styled.div<{ color: string }>`
   width: 360px;
-  background: rgba(255, 255, 255, 0.7);
+  background: ${({ theme }) => theme.colors.blurBg};
   padding: 25px;
   border-radius: 24px;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  border: solid 1px rgba(255, 255, 255, 0.8);
+  border: solid 1px ${({ theme }) => theme.colors.blurBorderColor};
   z-index: 9;
   display: flex;
   flex-direction: column;

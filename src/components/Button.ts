@@ -1,11 +1,12 @@
 import styled from 'styled-components';
+import { darken, lighten, getLuminance } from 'polished';
 
 const Button = styled.button<{ red?: boolean }>`
   display: block;
   height: 40px;
   line-height: 40px;
   border-radius: 8px;
-  background: ${({ red }) => (red ? 'red' : '#0068f6')};
+  background: ${({ red, theme }) => (red ? 'red' : theme.nodeColors.accent)};
   border: none;
   padding: 0 16px;
   color: white;
@@ -17,8 +18,8 @@ const Button = styled.button<{ red?: boolean }>`
   box-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
   &:hover {
     line-height: 38px;
-    border: 1px solid #418df7;
-    background: #1874f5;
+    border: 1px solid ${({ theme }) => lighten(0.1, theme.nodeColors.accent)};
+    background: ${({ theme }) => lighten(0.05, theme.nodeColors.accent)};
     outline: none;
     transform: translateY(-1px);
     box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);

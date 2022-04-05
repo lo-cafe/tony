@@ -2,6 +2,7 @@ import { useState, useEffect, memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FiMessageSquare, FiUser, FiList } from 'react-icons/fi';
 import { Handle, Position, Node, Connection } from 'react-flow-renderer';
+import { darken, lighten, rgba } from 'polished';
 
 import lace from '~/components/lace.svg';
 import laceOrange from '~/components/lace-orange.svg';
@@ -94,7 +95,7 @@ const Tag = styled.div`
 `;
 
 const TargetHandle = styled(Handle)`
-  background: white;
+  background: ${({ theme }) => theme.colors.cardBg};
   border: none;
   border-radius: 50%;
   border:
@@ -143,7 +144,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
   /* transform: scale(2); */
   bottom: -5px;
   cursor: pointer;
-  border: 4px solid white;
+  border: 4px solid ${({ theme }) => theme.colors.cardBg};
   transition: 300ms transform ease-out;
   &.connecting {
     animation: ${bounce} 1600ms infinite linear;
@@ -209,7 +210,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   padding: 10px;
   padding-top: 20px;
   display: inline-block;
-  background: white;
+  background: ${({ theme }) => theme.colors.cardBg};
   border-radius: 16px;
   width: 250px;
   height: 175px;
@@ -221,20 +222,27 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
   transition: box-shadow 300ms ease-out, opacity 300ms ease-out;
   opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
-  animation: ${({ cardType }) =>
+  animation: ${({ cardType, theme }) =>
       cardType === 'answer'
-        ? putInPlace('rgba(233, 137, 27, 0.5)')
-        : putInPlace('rgba(0, 104, 246, 0.5)')}
+        ? putInPlace(rgba(theme.nodeColors.answerNode, 0.5))
+        : putInPlace(rgba(theme.nodeColors.textNode, 0.5))}
     1s ease-out;
-  & ${ItemTitleBar}, & ${Tag}, & ${SourceHandle} {
+  ${ItemTitleBar}, ${Tag}, ${SourceHandle} {
     transition: transform 300ms ease-out, background 300ms ease-out;
-    background: ${({ cardType }) => (cardType === 'answer' ? '#e9891b' : '#0068f6')};
+    background: ${({ cardType, theme }) =>
+      cardType === 'answer' ? darken(0.1, theme.nodeColors.answerNode) : theme.nodeColors.textNode};
+  }
+  ${Tag}, ${SourceHandle} {
     &:hover {
-      background-color: ${({ cardType }) => (cardType === 'answer' ? '#ca7718' : '#0068f6')};
+      background-color: ${({ cardType, theme }) =>
+        cardType === 'answer'
+          ? darken(0.2, theme.nodeColors.answerNode)
+          : darken(0.2, theme.nodeColors.textNode)};
     }
   }
   & ${IdTag} {
-    color: ${({ cardType }) => (cardType === 'answer' ? '#e9891b' : '#0068f6')};
+    color: ${({ cardType, theme }) =>
+      cardType === 'answer' ? theme.nodeColors.answerNode : theme.nodeColors.textNode};
   }
   & ${TargetHandle}::after {
     background-image: url(${({ cardType }) => (cardType === 'answer' ? laceOrange : lace)});
@@ -252,10 +260,18 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
     width: 100%;
     height: 100%;
     border-radius: 16px;
-    border: ${({ selected, cardType }) =>
+    border: ${({ selected, cardType, theme }) =>
       selected
-        ? `4px solid ${cardType === 'answer' ? '#e6a254' : '#00bcd4'};`
-        : `0px solid ${cardType === 'answer' ? '#e6a254' : '#00bcd4'}`};
+        ? `4px solid ${
+            cardType === 'answer'
+              ? lighten(0.2, theme.nodeColors.answerNode)
+              : lighten(0.2, theme.nodeColors.textNode)
+          };`
+        : `0px solid ${
+            cardType === 'answer'
+              ? lighten(0.2, theme.nodeColors.answerNode)
+              : lighten(0.2, theme.nodeColors.textNode)
+          }`};
     transition: border 150ms ease-out;
     pointer-events: none;
   }
@@ -263,7 +279,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
     position: absolute;
     content: '';
     height: 4px;
-    background: white;
+    background: ${({ theme }) => theme.colors.cardBg};
     width: 25px;
     top: 0;
     left: 0;
@@ -282,7 +298,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
 `;
 
 const ItemWrapper = styled.div`
-  background: #f3f3f3;
+  background: ${({ theme }) => theme.colors.inputBg};
   padding: 8px 12px;
   border-radius: 8px;
   font-size: 14px;
@@ -301,6 +317,7 @@ const ItemBody = styled.pre`
   margin: 0;
   white-space: break-spaces;
   height: 54.5px;
+  color: ${({ theme }) => theme.colors.font};
 `;
 
 const ItemTitle = styled.div`

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import styled, { css } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
 import { createPortal } from 'react-dom';
 import {
   getAuth,
@@ -12,6 +12,8 @@ import {
 import { Transition } from 'react-transition-group';
 import { FiUser } from 'react-icons/fi';
 import { InfinitySpin } from 'react-loader-spinner';
+import { transparentize, lighten } from 'polished';
+
 import { initFirebase } from '~/instances/firebase';
 import useUserStore from '~/instances/userStore';
 
@@ -25,6 +27,7 @@ const auth = getAuth();
 setPersistence(auth, browserSessionPersistence);
 
 const LoginWidget = () => {
+  const theme = useTheme();
   const loggedUserEmail = useUserStore((s) => s.email);
   const [widgetOpen, setWidgetOpen] = useState(false);
   const [email, setEmail] = useState('');
@@ -97,7 +100,7 @@ const LoginWidget = () => {
                 ) : (
                   <>
                     <LoaderWrapper active={loading}>
-                      <InfinitySpin width="200" color="#0068f6" />
+                      <InfinitySpin width="200" color={theme.nodeColors.accent} />
                     </LoaderWrapper>
                     <TitlesWrapper signUpInstead={signUpInstead}>
                       <button onClick={preventDefault(() => setSignUpInstead(false))}>Login</button>
@@ -174,7 +177,7 @@ const LoaderWrapper = styled.div<{ active: boolean }>`
   justify-content: center;
   align-items: center;
   backdrop-filter: blur(${({ active }) => (active ? 20 : 0)}px);
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: ${({ theme }) => transparentize(0.3, theme.colors.blurBg)};
   opacity: ${({ active }) => (active ? 1 : 0)};
   pointer-events: ${({ active }) => (active ? 'auto' : 'none')};
   transition: opacity 300ms ease-out, backdrop-filter 300ms ease-out;
@@ -196,15 +199,15 @@ const TitlesWrapper = styled.div<{ signUpInstead: boolean }>`
     transition: color 200ms ease-out;
   }
   button:first-child {
-    color: ${({ signUpInstead }) => (signUpInstead ? '#eee' : '#0068f6')};
+    color: ${({ signUpInstead, theme }) => (signUpInstead ? '#eee' : theme.nodeColors.accent)};
     &:hover {
-      color: ${({ signUpInstead }) => (signUpInstead ? '#dbdbdb' : '#0068f6')};
+      color: ${({ signUpInstead, theme }) => (signUpInstead ? '#dbdbdb' : theme.nodeColors.accent)};
     }
   }
   button:last-child {
-    color: ${({ signUpInstead }) => (signUpInstead ? '#0068f6' : '#eee')};
+    color: ${({ signUpInstead, theme }) => (signUpInstead ? theme.nodeColors.accent : '#eee')};
     &:hover {
-      color: ${({ signUpInstead }) => (signUpInstead ? '#0068f6' : '#dbdbdb')};
+      color: ${({ signUpInstead, theme }) => (signUpInstead ? theme.nodeColors.accent : '#dbdbdb')};
     }
   }
 `;
@@ -245,7 +248,8 @@ const StyledInput = styled.input`
   height: 40px;
   line-height: 40px;
   border-radius: 8px;
-  background: #fafafa;
+  background: ${({ theme }) => theme.colors.inputBg};
+  color: inherit;
   padding: 0 16px;
   margin-bottom: 16px;
   border: none;
@@ -255,11 +259,11 @@ const StyledInput = styled.input`
   box-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
   &:focus {
     font-weight: 700;
-    color: #0068f6;
+    color: ${({ theme }) => theme.nodeColors.accent};
     outline: none;
     transform: translateY(-1px);
     box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
-    background: white;
+    background: ${({ theme }) => lighten(0.1, theme.colors.inputBg)};
   }
 `;
 

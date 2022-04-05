@@ -17,6 +17,7 @@
     "jszip": "^3.7.1",
     "lodash": "^4.17.21",
     "nanoid": "^3.3.1",
+    "polished": "^4.2.1",
     "random-words": "^1.1.2",
     "react": "^17.0.2",
     "react-autowidth-input": "^1.0.5",

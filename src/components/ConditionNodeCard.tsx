@@ -2,7 +2,9 @@ import { useState, useEffect, memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FiHelpCircle } from 'react-icons/fi';
 import { Handle, Position, Node, Connection } from 'react-flow-renderer';
+import { darken, lighten, getLuminance } from 'polished';
 
+import { light, dark } from '~/constants/colors';
 import lace from '~/components/lace-black.svg';
 import { ID } from '~/types/data';
 
@@ -27,7 +29,12 @@ const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>
         <TargetHandle type="target" position={Position.Top} />
         <ItemTitleBar>
           <ItemTitle>
-            <ConditionHandle isValidConnection={isValidConnection} type="source" position={Position.Left} id="condition" />
+            <ConditionHandle
+              isValidConnection={isValidConnection}
+              type="source"
+              position={Position.Left}
+              id="condition"
+            />
             <FiHelpCircle />
             Condition
           </ItemTitle>
@@ -70,7 +77,11 @@ const ResultsWrapper = styled.div`
   gap: 8px;
   flex: 1;
   & > div {
-    background: #f5f5f5;
+    background: ${({ theme }) =>
+      getLuminance(theme.colors.bg) > 0.3
+        ? darken(0.2, theme.colors.bg)
+        : lighten(0.2, theme.colors.bg)};
+    /* background: ${({ theme }) => theme.colors.conditionResultWrapperBg}; */
     border-radius: 8px 8px 0 0;
     padding-bottom: 5px;
     position: relative;
@@ -78,7 +89,7 @@ const ResultsWrapper = styled.div`
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    color: gray;
+    color: ${({ theme }) => (getLuminance(theme.colors.bg) > 0.3 ? light.font : dark.font)};
     font-family: 'Roboto Mono', monospace;
     flex: 1;
   }
@@ -103,7 +114,7 @@ const bounce2 = keyframes`
 `;
 
 const TargetHandle = styled(Handle)`
-  background: white;
+  background: ${({ theme }) => theme.colors.cardBg};
   border: none;
   border-radius: 50%;
   border:
@@ -143,7 +154,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
   /* transform: scale(2); */
   bottom: -5px;
   cursor: pointer;
-  border: 4px solid white;
+  border: 4px solid ${({ theme }) => theme.colors.cardBg};
   transition: 300ms transform ease-out;
   &.connecting {
     animation: ${bounce} 1600ms infinite linear;
@@ -155,6 +166,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
 
 const ConditionHandle = styled(SourceHandle)`
   background: #424242;
+  border-color: ${({ theme }) => theme.colors.cardBg};
   left: -27px;
   &:hover {
     transform: translateY(-50%) scale(1.2);
@@ -211,7 +223,7 @@ const putInPlace = keyframes`
 const Item = styled.div<ItemProps & { condition?: boolean }>`
   padding: 20px 10px 0;
   display: inline-block;
-  background: white;
+  background: ${({ theme }) => theme.colors.cardBg};
   border-radius: 16px;
   width: 220px;
   height: 130px;
@@ -238,7 +250,10 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
     width: 100%;
     height: 100%;
     border-radius: 16px;
-    border: ${({ selected }) => (selected ? '4px solid gray' : '0px solid gray')};
+    border: ${({ selected, theme }) =>
+      selected
+        ? `4px solid ${lighten(0.2, theme.nodeColors.conditionNode)}`
+        : `0px solid ${lighten(0.2, theme.nodeColors.conditionNode)}`};
     transition: border 150ms ease-out;
     pointer-events: none;
   }
@@ -246,7 +261,7 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
     position: absolute;
     content: '';
     height: 4px;
-    background: white;
+    background: ${({ theme }) => theme.colors.cardBg};
     width: 25px;
     top: 0;
     left: 0;
@@ -265,11 +280,12 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
 `;
 
 const ItemTitleBar = styled.div`
-  background: #424242;
+  background: ${({ theme }) => theme.nodeColors.conditionNode};
   padding: 6px 12px;
   border-radius: 8px;
   text-transform: capitalize;
-  color: white;
+  color: ${({ theme }) =>
+    getLuminance(theme.nodeColors.conditionNode) > 0.3 ? light.font : dark.font};
   display: flex;
   justify-content: space-between;
   padding-right: 8px;

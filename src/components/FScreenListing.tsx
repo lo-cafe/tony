@@ -2,6 +2,7 @@ import { useEffect, useState, memo, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { FiGrid } from 'react-icons/fi';
 import { createPortal } from 'react-dom';
+import { transparentize } from 'polished';
 
 import { ID } from '~/types/data';
 import FixedButton from '~/components/FixedButton';
@@ -208,14 +209,15 @@ const FScreenListing: FC<FScreenListingProps> = memo(
               onFileChange={onFileChange}
             />
           ))}
-        {(!fullScreen || leaving) && (items.length > numberOfRecentItems || numberOfRecentItems === 0) && (
-          <FixedButton
-            icon={<FiGrid />}
-            value={`See${numberOfRecentItems !== 0 ? ` all ${items.length}` : ''}  ${listName}`}
-            onClick={() => setFullScreen(true)}
-            color="add"
-          />
-        )}
+        {(!fullScreen || leaving) &&
+          (items.length > numberOfRecentItems || numberOfRecentItems === 0) && (
+            <FixedButton
+              icon={<FiGrid />}
+              value={`See${numberOfRecentItems !== 0 ? ` all ${items.length}` : ''}  ${listName}`}
+              onClick={() => setFullScreen(true)}
+              color="add"
+            />
+          )}
       </Wrapper>
     );
   }
@@ -260,11 +262,11 @@ const Wrapper = styled.div<WrapperProps>`
   height: 100%;
   display: flex;
   gap: 8px;
-  color: #424242;
+  /* color: #424242; */
   transition: backdrop-filter 300ms ease-out, background 300ms ease-out;
   align-items: flex-start;
-  background: ${({ fullScreen, leaving }) =>
-    fullScreen && !leaving ? 'rgba(255, 255, 255, 0.6)' : 'rgba(255, 255, 255, 0)'};
+  background: ${({ fullScreen, leaving, theme }) =>
+    fullScreen && !leaving ? theme.colors.blurBg : transparentize(1, theme.colors.blurBg)};
   z-index: ${({ fullScreen, leaving }) => (fullScreen ? 20 : 19)};
   padding-top: ${padding('top')};
   padding-right: ${padding('right')};
@@ -272,8 +274,11 @@ const Wrapper = styled.div<WrapperProps>`
   padding-left: ${padding('left')};
   justify-content: ${justifyContent};
   align-content: ${alignContent};
-  backdrop-filter: blur(${({ fullScreen, leaving }) => (fullScreen && !leaving ? '30px' : 'unset')});
-  pointer-events: ${({ fullScreen, leaving }) => (fullScreen && !leaving ? 'all' : 'none')} !important;
+  backdrop-filter: blur(
+    ${({ fullScreen, leaving }) => (fullScreen && !leaving ? '30px' : 'unset')}
+  );
+  pointer-events: ${({ fullScreen, leaving }) =>
+    fullScreen && !leaving ? 'all' : 'none'} !important;
   * {
     pointer-events: all;
   }

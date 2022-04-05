@@ -3,6 +3,7 @@ import styled, { css } from 'styled-components';
 import { FiMessageSquare, FiTrash2, FiEdit2, FiDownload, FiCheck } from 'react-icons/fi';
 import AutowidthInput from 'react-autowidth-input';
 import { nanoid } from 'nanoid';
+import { darken } from 'polished';
 
 import { ID } from '~/types/data';
 
@@ -154,7 +155,7 @@ const FixedButtonWrapper = styled.button<{
     stroke-width: 3px;
   }
   font-family: inherit;
-  background: rgba(255, 255, 255, 0.7);
+  background: ${({ theme }) => theme.colors.blurBg};
   padding: ${({ selected, withButtons }) =>
     selected
       ? `0 ${!withButtons ? '12px' : '4px'} 0 14px`
@@ -173,9 +174,18 @@ const FixedButtonWrapper = styled.button<{
   position: relative;
   transition: background-color 300ms ease-out;
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
-  color: ${({ color, disabled }) =>
-    disabled ? '#bdbdbd' : color ? (color === 'add' ? '#0068f6' : 'red') : '#424242'};
-  border: ${({ selected }) => (selected ? 'solid 2px #0068f6' : 'solid 1px rgba(255,255,255,0.8)')};
+  color: ${({ color, disabled, theme }) =>
+    disabled
+      ? '#bdbdbd'
+      : color
+      ? color === 'add'
+        ? theme.nodeColors.accent
+        : 'red'
+      : theme.colors.font};
+  border: ${({ selected, theme }) =>
+    selected
+      ? `solid 2px ${theme.nodeColors.accent}`
+      : `solid 1px ${theme.colors.blurBorderColor}`};
   backdrop-filter: blur(40px);
   transition: box-shadow 300ms ease-out, background 300ms ease-out;
   user-select: none;
@@ -183,7 +193,7 @@ const FixedButtonWrapper = styled.button<{
     box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.15);
   }
   &:active {
-    background: rgba(235, 235, 235, 0.7);
+    background: ${({ theme }) => darken(0.1, theme.colors.blurBg)};
   }
 `;
 
@@ -191,7 +201,7 @@ const PillInput = styled(AutowidthInput)`
   border: none;
   color: inherit;
   min-width: unset;
-  background: lightyellow;
+  background: rgba(255, 226, 8, 0.1);
   border-radius: 4px;
   padding: 4px 8px;
   width: min-content;
