@@ -291,12 +291,16 @@ const ItemWrapper = styled.div`
   text-align: left;
 `;
 
-const ItemBody = styled.div`
+const ItemBody = styled.pre`
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
   word-break: break-word;
+  font-family: inherit;
+  margin: 0;
+  white-space: break-spaces;
+  height: 54.5px;
 `;
 
 const ItemTitle = styled.div`
