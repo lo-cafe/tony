@@ -5,7 +5,7 @@ import { Handle, Position, Node, Connection } from 'react-flow-renderer';
 import { darken, lighten, getLuminance } from 'polished';
 
 import { light, dark } from '~/constants/colors';
-import lace from '~/components/lace-black.svg';
+import LaceString from '~/components/LaceString';
 import { ID } from '~/types/data';
 
 interface ConditionNodeCardProps {
@@ -82,8 +82,9 @@ const ResultsWrapper = styled.div`
         ? darken(0.2, theme.colors.bg)
         : lighten(0.2, theme.colors.bg)};
     /* background: ${({ theme }) => theme.colors.conditionResultWrapperBg}; */
-    border-radius: 8px 8px 0 0;
+    border-radius: 8px;
     padding-bottom: 5px;
+    margin-bottom: 8px;
     position: relative;
     display: flex;
     align-items: center;
@@ -132,7 +133,7 @@ const TargetHandle = styled(Handle)`
     left: 0;
     margin: auto;
     overflow: visible;
-    background-image: url(${lace});
+    background-image: url(${({ theme }) => LaceString(theme.nodeColors.conditionNode)});
     height: ${LACE_SIZE}px;
     width: ${LACE_SIZE}px;
     background-size: cover;
@@ -152,7 +153,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
   justify-content: center;
   z-index: 9;
   /* transform: scale(2); */
-  bottom: -5px;
+  bottom: -11px;
   cursor: pointer;
   border: 4px solid ${({ theme }) => theme.colors.cardBg};
   transition: 300ms transform ease-out;
@@ -165,7 +166,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
 `;
 
 const ConditionHandle = styled(SourceHandle)`
-  background: #424242;
+  background: ${({ theme }) => getLuminance(theme.colors.cardBg) > 0.3 ? '#424242' : '#f5f5f5'};
   border-color: ${({ theme }) => theme.colors.cardBg};
   left: -27px;
   &:hover {

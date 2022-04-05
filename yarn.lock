@@ -2496,6 +2496,11 @@ react-autowidth-input@^1.0.5:
   resolved "https://registry.yarnpkg.com/react-autowidth-input/-/react-autowidth-input-1.0.5.tgz#a0d3c96f5a7f3ba74ad489ec6fe437bb056356a6"
   integrity sha512-yspazqWt8nJfw40+sYUs76cyoBIvjZMTNWt/JZ2KCAhugD7gqifUv1FwY/1M+tTuqvlF1EUg4eTf6LveVJduvw==
 
+react-colorful@^5.5.1:
+  version "5.5.1"
+  resolved "https://registry.yarnpkg.com/react-colorful/-/react-colorful-5.5.1.tgz#29d9c4e496f2ca784dd2bb5053a3a4340cfaf784"
+  integrity sha512-M1TJH2X3RXEt12sWkpa6hLc/bbYS0H6F4rIqjQZ+RxNBstpY67d9TrFXtqdZwhpmBXcCwEi7stKqFue3ZRkiOg==
+
 react-dom@^17.0.2:
   version "17.0.2"
   resolved "https://registry.yarnpkg.com/react-dom/-/react-dom-17.0.2.tgz#ecffb6845e3ad8dbfcdc498f0d0a939736502c23"
@@ -2909,6 +2914,11 @@ uri-js@^4.2.2:
   dependencies:
     punycode "^2.1.0"
 
+use-debouncy@^4.3.0:
+  version "4.3.0"
+  resolved "https://registry.yarnpkg.com/use-debouncy/-/use-debouncy-4.3.0.tgz#52476d903254fbdb7c2ab01ae5708381bba914e0"
+  integrity sha512-9wJtM/RS57Bw8MIltmCjVPdpv8CqtzcNauS2Nh1/FLQrPHoJrUnslaU1cvBcJoFxp5TCw9T/09YdeilxdAZSlw==
+
 util-deprecate@~1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/util-deprecate/-/util-deprecate-1.0.2.tgz#450d4dc9fa70de732762fbd2d4a28981419a0ccf"
@@ -3035,6 +3045,11 @@ yargs@^16.2.0:
     string-width "^4.2.0"
     y18n "^5.0.5"
     yargs-parser "^20.2.2"
+
+zustand-persist@^0.4.0:
+  version "0.4.0"
+  resolved "https://registry.yarnpkg.com/zustand-persist/-/zustand-persist-0.4.0.tgz#55f32c3cd98ea91b89f07ae249d20e471f0a5ba3"
+  integrity sha512-u6bBIc4yZRpSKBKuTNhoqvoIb09gGHk2NkiPg4K7MPIWTYZg70PlpBn48QEDnKZwfNurnf58TaW5BuMGIMf5hw==
 
 zustand@^3.7.1:
   version "3.7.1"

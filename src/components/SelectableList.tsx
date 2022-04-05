@@ -1,4 +1,7 @@
 import styled from 'styled-components';
+import { getLuminance } from 'polished';
+
+import colors from '~/constants/colors';
 
 type OptionTypes = 'divider' | 'item' | 'header';
 
@@ -40,7 +43,14 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
           onClick={onClickProxy(option.onClick!)}
           type="button"
         >
-          {typeof option.label === 'object' ? option : <span>{option.icon}{option.label}</span>}
+          {typeof option.label === 'object' ? (
+            option
+          ) : (
+            <span>
+              {option.icon}
+              {option.label}
+            </span>
+          )}
         </OptionButton>
       ),
     };
@@ -77,15 +87,16 @@ const OptionButton = styled.button`
     background-color: transparent;
     border: none;
     padding: 8px 12px;
-    color: ${({ color }) => color || '#424242'};
+    color: ${({ color, theme }) => color || theme.colors.font};
     font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
     transition: 150ms ease-out;
     margin: 1px 0;
     &:hover {
-      background-color: #0050d3;
-      color: white;
+      background-color: ${({ theme }) => theme.nodeColors.accent};
+      color: ${({ theme }) =>
+        getLuminance(theme.nodeColors.accent) > 0.3 ? colors.light.font : colors.dark.font})};
     }
   }
 `;

@@ -30,7 +30,7 @@ import ReactFlow, {
   useUpdateNodeInternals,
 } from 'react-flow-renderer';
 import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
-import { lighten } from 'polished';
+import { lighten, getLuminance } from 'polished';
 
 import useUserStore, { ThemeTypes } from '~/instances/userStore';
 
@@ -47,6 +47,7 @@ import {
 import capitalize from '~/utils/capitalize';
 import discordIcon from '~/components/discord.svg';
 import LoginWidget from '~/components/LoginWidget';
+import SettingsWidget from '~/components/SettingsWidget';
 import CustomEdge from '~/components/CustomEdge';
 import FixedButton from '~/components/FixedButton';
 import ChatNodeCard from '~/components/ChatNodeCard';
@@ -838,11 +839,12 @@ const Story = () => {
           )}
         </OTopLeftUnder>
         <OTopRight>
-          <FixedButton
+          {/* <FixedButton
             onClick={() => setTheme(themes[themes.indexOf(currentTheme) + 1] || themes[0])}
             color="add"
             value={capitalize(currentTheme)}
-          />
+          /> */}
+          <SettingsWidget />
           <FixedButton
             disabled={!selectedNodes || selectedNodes.length !== 1}
             icon={<FiPlay />}
@@ -988,7 +990,7 @@ const Story = () => {
           maxZoom={4}
         >
           <StyledMiniMap
-            maskColor={lighten(0.2, theme.colors.bg)}
+            maskColor={getLuminance(theme.colors.bg) > 0.3 ? undefined : lighten(0.2, theme.colors.bg)}
             nodeBorderRadius={16}
             nodeColor={(node: ChatNode) =>
               theme.nodeColors[
@@ -1123,7 +1125,6 @@ const OverlayWrapper = styled.div`
 const OArea = styled.div`
   display: flex;
   gap: 8px;
-  color: #424242;
   align-items: flex-start;
   justify-content: flex-start;
 `;
