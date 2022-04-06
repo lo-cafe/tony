@@ -176,7 +176,7 @@ const LoaderWrapper = styled.div<{ active: boolean }>`
   height: calc(100% + 2px);
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(${({ active }) => (active ? 20 : 0)}px);
+  backdrop-filter: blur(${({ active }) => (active ? 20 : 0)}px) saturate(${({ active }) => (active ? 200 : 0)}%);
   background-color: ${({ theme }) => transparentize(0.3, theme.colors.blurBg)};
   opacity: ${({ active }) => (active ? 1 : 0)};
   pointer-events: ${({ active }) => (active ? 'auto' : 'none')};

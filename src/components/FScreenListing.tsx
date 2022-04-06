@@ -274,9 +274,8 @@ const Wrapper = styled.div<WrapperProps>`
   padding-left: ${padding('left')};
   justify-content: ${justifyContent};
   align-content: ${alignContent};
-  backdrop-filter: blur(
-    ${({ fullScreen, leaving }) => (fullScreen && !leaving ? '30px' : 'unset')}
-  );
+  backdrop-filter: ${({ fullScreen, leaving }) =>
+    fullScreen && !leaving ? 'blur(35px) saturate(200%)' : 'unset'};
   pointer-events: ${({ fullScreen, leaving }) =>
     fullScreen && !leaving ? 'all' : 'none'} !important;
   * {

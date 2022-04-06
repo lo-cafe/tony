@@ -186,7 +186,7 @@ const FixedButtonWrapper = styled.button<{
     selected
       ? `solid 2px ${theme.nodeColors.accent}`
       : `solid 1px ${theme.colors.blurBorderColor}`};
-  backdrop-filter: blur(40px);
+  backdrop-filter: blur(35px) saturate(200%);
   transition: box-shadow 300ms ease-out, background 300ms ease-out;
   user-select: none;
   &:hover {

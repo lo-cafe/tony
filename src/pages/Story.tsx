@@ -1182,7 +1182,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
     width: calc(100% - 2px);
     height: 100%;
     background-color: rgba(255, 255, 255, 0);
-    backdrop-filter: blur(40px);
+    backdrop-filter: blur(35px) saturate(200%);
     border-radius: 16px;
     z-index: -1;
   }
@@ -1232,7 +1232,7 @@ const PlayModeWrapper = styled.div`
   height: 100%;
   z-index: 20;
   background-color: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(40px);
+  backdrop-filter: blur(35px) saturate(200%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1283,7 +1283,7 @@ const TypeChooser = styled.button<{ selected: boolean }>`
   align-items: center;
   margin: 5px;
   font-size: 16px;
-  background: ${({ theme }) => theme.colors.inputBg};
+  background: ${({ theme }) => theme.colors.inputBlurBg};
   border-radius: 5px;
   padding: 8px;
   gap: 4px;
@@ -1298,8 +1298,8 @@ const TypeChooser = styled.button<{ selected: boolean }>`
   &:hover {
     background: ${({ theme }) =>
       getLuminance(theme.colors.bg) > 0.4
-        ? darken(0.05, theme.colors.inputBg)
-        : lighten(0.1, theme.colors.inputBg)};
+        ? darken(0.5, theme.colors.inputBlurBg)
+        : lighten(0.1, theme.colors.inputBlurBg)};
   }
 `;
 
@@ -1314,14 +1314,22 @@ const Textarea = styled.textarea`
   width: 100%;
   border: none;
   border-radius: 8px;
-  background: ${({ theme }) => theme.colors.inputBg};
-  padding: 10px;
+  background: ${({ theme }) => theme.colors.inputBlurBg};
+  padding: 20px;
   color: ${({ theme }) => theme.colors.font};
   font-size: 14px;
   outline: none;
   font-family: inherit;
   resize: vertical;
   min-height: 200px;
+  color: #424242;
+  transition: background 0.2s ease-out;
+  &:focus {
+    background: ${({ theme }) =>
+      getLuminance(theme.colors.bg) > 0.4
+        ? darken(0.5, theme.colors.inputBlurBg)
+        : lighten(0.1, theme.colors.inputBlurBg)};
+  }
 `;
 
 const ItemTitleBar = styled.div`
@@ -1370,7 +1378,7 @@ const SidePanel = styled.div<{ color: string }>`
   display: flex;
   flex-direction: column;
   gap: 16px;
-  backdrop-filter: blur(40px);
+  backdrop-filter: blur(35px) saturate(200%);
   ${ItemTitleBar}, ${IdTag} {
     background: ${({ color }) => color};
     color: ${({ color }) => (getLuminance(color) > 0.4 ? colors.light.font : colors.dark.font)};

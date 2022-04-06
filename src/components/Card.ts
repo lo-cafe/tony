@@ -6,7 +6,7 @@ const Card = styled.div`
   border-radius: 16px;
   box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.15);
   border: solid 1px ${({ theme }) => theme.colors.blurBorderColor};
-  backdrop-filter: blur(40px);
+  backdrop-filter: blur(35px) saturate(200%);
 `;
 
 export default Card;
