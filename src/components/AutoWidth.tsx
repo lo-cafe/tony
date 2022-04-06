@@ -35,6 +35,7 @@ const AutoWidth: FC<AutoWidthProps> = ({ children, state }) => {
     switch (state) {
       case 'entering':
         measure();
+        console.log(measuredWidth.current);
         setWidth(measuredWidth.current);
         break;
       case 'entered':
@@ -64,9 +65,11 @@ const AutoWidth: FC<AutoWidthProps> = ({ children, state }) => {
           <Measurements>
             {React.Children.map(children, (_child) => {
               const child = _child as React.ReactElement<React.PropsWithChildren<any>>;
-              <FakeChild ref={fakeChildrenRef}>
-                {React.cloneElement<any>(child, child.props)};
-              </FakeChild>;
+              return (
+                <FakeChild ref={fakeChildrenRef}>
+                  {React.cloneElement<any>(child, child.props)};
+                </FakeChild>
+              );
             })}
           </Measurements>,
           document.body
@@ -94,7 +97,9 @@ const Measurements = styled.div`
   pointer-events: none;
 `;
 
-const WidthMutatnt = styled.div<{ state: 'unmounted' | 'entering' | 'entered' | 'exiting' | 'exited' }>`
+const WidthMutatnt = styled.div<{
+  state: 'unmounted' | 'entering' | 'entered' | 'exiting' | 'exited';
+}>`
   transition: width 300ms ease-out, opacity 300ms ease-out;
   opacity: ${({ state }) => (state === 'entered' || state === 'entering' ? 1 : 0)};
 `;
