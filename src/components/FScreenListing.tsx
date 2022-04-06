@@ -1,11 +1,12 @@
 import { useEffect, useState, memo, useRef } from 'react';
-import styled, { css } from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import { FiGrid } from 'react-icons/fi';
-import { createPortal } from 'react-dom';
+import { Transition, TransitionGroup } from 'react-transition-group';
 import { transparentize } from 'polished';
 
 import { ID } from '~/types/data';
 import FixedButton from '~/components/FixedButton';
+import AutoWidth from '~/components/AutoWidth';
 
 type Item = {
   id: ID;
@@ -61,13 +62,13 @@ const getTransformedItems = ({
   getRecent,
   numberOfRecentItems = 3,
 }: TransformProps): Item[] => {
-  if (!rawRecentItems.length || !selectedItemId)
+  if (!rawRecentItems.length)
     return getRecent ? allItems.slice(0, numberOfRecentItems) : allItems;
   const recentItems = rawRecentItems
     .map(({ id }) => allItems.find((item) => item.id === id))
     .filter((x) => !!x) as Item[];
   const itemsNotInRecent = allItems.filter((x) => !recentItems.find((y) => y.id === x.id));
-  if (recentItems.find(({ id }) => id === selectedItemId)) {
+  if (!selectedItemId || recentItems.find(({ id }) => id === selectedItemId)) {
     const recentItemsWithMissing = [...recentItems, ...itemsNotInRecent];
     return getRecent
       ? recentItemsWithMissing.slice(0, numberOfRecentItems)
@@ -79,6 +80,7 @@ const getTransformedItems = ({
     ...recentItems,
     ...itemsNotInRecent.filter((x) => x.id !== selectedItemId),
   ].filter((x) => !!x) as Item[];
+  console.log(newItems)
   return getRecent ? newItems.slice(0, numberOfRecentItems) : newItems;
 };
 
@@ -184,23 +186,30 @@ const FScreenListing: FC<FScreenListingProps> = memo(
         onClick={closeFullScreen}
         positionInFullScreen={positionInFullScreen}
       >
-        {itemsToIterate.map(({ id, name, disabled }) => (
-          <FixedButton
-            key={id}
-            data={id}
-            selected={selectedItemId === id}
-            onClick={() => onItemClick && onItemClick(id)}
-            value={name}
-            onValueChange={onItemValueChange}
-            onDownload={onItemDownload}
-            onDelete={onItemDelete}
-            icon={icon}
-            disabled={disabled}
-          />
-        ))}
+        <TransitionGroup component={null}>
+          {itemsToIterate.map(({ id, name, disabled }) => (
+            <Transition appear key={id} timeout={300} classNames="item">
+              {(state) => (
+                <AutoWidth state={state} key={id}>
+                  <StyledFixedBtn
+                    data={id}
+                    selected={selectedItemId === id}
+                    onClick={() => onItemClick && onItemClick(id)}
+                    value={name}
+                    onValueChange={onItemValueChange}
+                    onDownload={onItemDownload}
+                    onDelete={onItemDelete}
+                    icon={icon}
+                    disabled={disabled}
+                  />
+                </AutoWidth>
+              )}
+            </Transition>
+          ))}
+        </TransitionGroup>
         {extraOptionsToIterate &&
           extraOptionsToIterate.map(({ value, icon, onClick, color, onFileChange }) => (
-            <FixedButton
+            <StyledFixedBtn
               key={value}
               value={value}
               onClick={onClick}
@@ -224,6 +233,24 @@ const FScreenListing: FC<FScreenListingProps> = memo(
 );
 
 export default FScreenListing;
+
+const StyledFixedBtn = styled(FixedButton)`
+  margin: 0 4px;
+  &.item-enter {
+    opacity: 0;
+  }
+  &.item-enter-active {
+    opacity: 1;
+    transition: opacity 500ms ease-in;
+  }
+  &.item-exit {
+    opacity: 1;
+  }
+  &.item-exit-active {
+    opacity: 0;
+    transition: opacity 500ms ease-in;
+  }
+`;
 
 interface WrapperProps {
   leaving: boolean;
@@ -261,7 +288,6 @@ const Wrapper = styled.div<WrapperProps>`
   width: 100%;
   height: 100%;
   display: flex;
-  gap: 8px;
   /* color: #424242; */
   transition: backdrop-filter 300ms ease-out, background 300ms ease-out;
   align-items: flex-start;
