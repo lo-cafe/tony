@@ -1,4 +1,4 @@
-import 'regenerator-runtime/runtime'
+import 'regenerator-runtime/runtime';
 
 import _theme from '~/constants/theme';
 
@@ -45,7 +45,7 @@ describe('App', () => {
         bounding_box.y + bounding_box.height / 2
       );
       await page.mouse.down();
-      await page.mouse.move(WINDOW_WIDTH / 2 + bounding_box.width / 2 + 10, WINDOW_HEIGHT / 2);
+      await page.mouse.move(WINDOW_WIDTH / 2 + (bounding_box.width / 2 - 10), WINDOW_HEIGHT / 2);
       await page.waitForTimeout(theme.transitions.quick + 1);
       const addCardNodeBeforeDroppingDimensions = await page.evaluate(() => {
         const { x, y } = document
