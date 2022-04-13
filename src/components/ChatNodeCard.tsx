@@ -17,8 +17,8 @@ interface ChatNodeCardProps extends ChatNodeData {
   isConnectionValid?: (source: ID, target: ID, sourceHandle: string | null) => boolean;
 }
 
-const ChatNodeCard: FC<Node<ChatNodeCardProps>> = memo(
-  ({ type, id, data, selected, className, connectable }) => {
+const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
+  ({ type, id, data, selected, className, connectable, testId }) => {
     const isValidConnection = (connection: Connection) => {
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
       return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle);
@@ -29,10 +29,11 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps>> = memo(
         cardType={type as 'answer' | 'text'}
         selected={selected}
         className={className}
+        data-testid={testId}
       >
         <TargetHandle type="target" isConnectable={connectable} position={Position.Top} />
         <ItemTitleBar>
-          <ItemTitle>
+          <ItemTitle data-testid="node-type">
             {type === CHAT_NODE_ANSWER_TYPE ? <FiList /> : <FiMessageSquare />}
             {type === CHAT_NODE_ANSWER_TYPE ? 'Answer' : 'Text'}
           </ItemTitle>
@@ -88,7 +89,7 @@ const Tag = styled.div`
   display: inline-flex;
   gap: 4px;
   align-items: center;
-  transition: background-color 300ms ease-out;
+  transition: background-color ${({ theme }) => theme.transitions.normal}ms ease-out;
   &:hover {
     background-color: #005ee2;
   }
@@ -144,7 +145,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
   bottom: -5px;
   cursor: pointer;
   border: 4px solid ${({ theme }) => theme.colors.cardBg};
-  transition: 300ms transform ease-out;
+  transition: ${({ theme }) => theme.transitions.normal}ms transform ease-out;
   &.connecting {
     animation: ${bounce} 1600ms infinite linear;
   }
@@ -211,7 +212,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   display: inline-block;
   background: ${({ theme }) => theme.colors.cardBg};
   border-radius: 16px;
-  width: 250px;
+  width: 249px;
   height: 175px;
   display: flex;
   margin: 0;
@@ -219,7 +220,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   cursor: pointer;
   flex-direction: column;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 300ms ease-out, opacity 300ms ease-out;
+  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out, opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
   animation: ${({ cardType, theme }) =>
       cardType === 'answer'
@@ -227,7 +228,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
         : putInPlace(rgba(theme.nodeColors.textNode, 0.5))}
     1s ease-out;
   ${ItemTitleBar}, ${Tag}, ${SourceHandle} {
-    transition: transform 300ms ease-out, background 300ms ease-out;
+    transition: transform ${({ theme }) => theme.transitions.normal}ms ease-out, background ${({ theme }) => theme.transitions.normal}ms ease-out;
     color: ${({ cardType, theme }) =>
       getLuminance(
         cardType === 'answer' ? theme.nodeColors.answerNode : theme.nodeColors.textNode
@@ -285,7 +286,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
               ? lighten(0.2, theme.nodeColors.answerNode)
               : lighten(0.2, theme.nodeColors.textNode)
           }`};
-    transition: border 150ms ease-out;
+    transition: border ${({ theme }) => theme.transitions.superQuick}ms ease-out;
     pointer-events: none;
   }
   &::before {

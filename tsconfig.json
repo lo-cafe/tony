@@ -12,13 +12,14 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "resolveJsonModule": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "noEmit": true,
     "jsx": "react-jsx",
     "baseUrl": "./",
     "paths": {
       "~/*": ["src/*"]
-    }
+    },
+    "types": ["jest", "node", "puppeteer", "jest-environment-puppeteer", "expect-puppeteer"]
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }],

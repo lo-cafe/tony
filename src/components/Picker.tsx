@@ -50,7 +50,7 @@ const Color = styled.button<{ selected: boolean }>`
   cursor: pointer;
   border: ${({ selected, theme }) =>
     selected ? '4px solid rgba(255,255,255,0.5)' : '0px solid rgba(255,255,255,0.5)'};
-  transition: border 200ms ease-out;
+  transition: border ${({ theme }) => theme.transitions.quick}ms ease-out;
 `;
 
 const ColorPickerWrapper = styled.div`

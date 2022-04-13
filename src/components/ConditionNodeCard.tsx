@@ -28,7 +28,7 @@ const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>
       >
         <TargetHandle type="target" position={Position.Top} />
         <ItemTitleBar>
-          <ItemTitle>
+          <ItemTitle data-testid="node-type">
             <ConditionHandle
               isValidConnection={isValidConnection}
               type="source"
@@ -156,7 +156,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
   bottom: -11px;
   cursor: pointer;
   border: 4px solid ${({ theme }) => theme.colors.cardBg};
-  transition: 300ms transform ease-out;
+  transition: ${({ theme }) => theme.transitions.normal}ms transform ease-out;
   &.connecting {
     animation: ${bounce} 1600ms infinite linear;
   }
@@ -187,7 +187,7 @@ const ConditionHandle = styled(SourceHandle)`
 //   border-color: transparent #424242 transparent transparent;
 //   border-radius: 0;
 //   background: transparent;
-//   transition: 300ms transform ease-out;
+//   transition: ${({ theme }) => theme.transitions.normal}ms transform ease-out;
 //   &.connecting {
 //     animation: ${bounce2} 1600ms infinite linear;
 //   }
@@ -234,7 +234,7 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
   cursor: pointer;
   flex-direction: column;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 300ms ease-out, opacity 300ms ease-out;
+  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out, opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
   animation: ${putInPlace} 1s ease-out;
   user-select: none;
@@ -255,7 +255,7 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
       selected
         ? `4px solid ${lighten(0.2, theme.nodeColors.conditionNode)}`
         : `0px solid ${lighten(0.2, theme.nodeColors.conditionNode)}`};
-    transition: border 150ms ease-out;
+    transition: border ${({ theme }) => theme.transitions.superQuick}ms ease-out;
     pointer-events: none;
   }
   &::before {

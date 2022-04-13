@@ -4,7 +4,7 @@ import { createGlobalStyle, ThemeProvider } from 'styled-components';
 import { ReactFlowProvider } from 'react-flow-renderer';
 import { getAuth } from 'firebase/auth';
 
-import colors from '~/constants/colors';
+import theme from '~/constants/theme';
 import { initFirebase } from '~/instances/firebase';
 import useUserStore from '~/instances/userStore';
 import Story from '~/pages/Story';
@@ -16,7 +16,7 @@ const App = () => {
   const setEmail = useUserStore((state) => state.setEmail);
   const setUid = useUserStore((state) => state.setUid);
   const _theme = useUserStore((state) => state.theme);
-  const nodeColors = useUserStore((state) => state.nodeColors);
+  useUserStore((state) => state.nodeColors);
   const [prefersDark, setPrefersDark] = useState(
     window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
       ? 'dark'
@@ -40,9 +40,9 @@ const App = () => {
     };
   }, []);
 
-  const theme = (_theme === 'auto' ? prefersDark : _theme) as 'light' | 'dark';
+  const selectedTheme = (_theme === 'auto' ? prefersDark : _theme) as 'light' | 'dark';
   return (
-    <ThemeProvider theme={{ colors: colors[theme], nodeColors: nodeColors[theme] }}>
+    <ThemeProvider theme={theme(selectedTheme)}>
       <ReactFlowProvider>
         <GlobalStyles />
         <Story />

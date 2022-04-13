@@ -180,7 +180,7 @@ const LoaderWrapper = styled.div<{ active: boolean }>`
   background-color: ${({ theme }) => transparentize(0.3, theme.colors.blurBg)};
   opacity: ${({ active }) => (active ? 1 : 0)};
   pointer-events: ${({ active }) => (active ? 'auto' : 'none')};
-  transition: opacity 300ms ease-out, backdrop-filter 300ms ease-out;
+  transition: opacity ${({ theme }) => theme.transitions.normal}ms ease-out, backdrop-filter ${({ theme }) => theme.transitions.normal}ms ease-out;
 `;
 
 const TitlesWrapper = styled.div<{ signUpInstead: boolean }>`
@@ -196,7 +196,7 @@ const TitlesWrapper = styled.div<{ signUpInstead: boolean }>`
     background: transparent;
     font-family: inherit;
     font-weight: 700;
-    transition: color 200ms ease-out;
+    transition: color ${({ theme }) => theme.transitions.quick}ms ease-out;
   }
   button:first-child {
     color: ${({ signUpInstead, theme }) => (signUpInstead ? '#eee' : theme.nodeColors.accent)};

@@ -592,8 +592,8 @@ const Story = () => {
     }, 1);
     const newNode = initialChatNodeData();
     newNode.position = reactFlowInstance.project({
-      x: info.x - 139,
-      y: info.y + window.innerHeight - 70 - 40 - 170,
+      x: info.x - 138,
+      y: info.y + window.innerHeight - 282,
     });
     setNodes((nds) => [...nds, newNode]);
   };
@@ -790,7 +790,7 @@ const Story = () => {
         </PlayModeWrapper>
       )}
       <OverlayWrapper>
-        <OTopLeft>
+        <OTopLeft data-testid="workspaces-list">
           <FScreenListing
             numberOfRecentItems={2}
             listName="Workspaces"
@@ -807,6 +807,7 @@ const Story = () => {
                 icon: <FiPlus />,
                 color: 'add',
                 onClick: addWorkspace,
+                testId: 'add-workspace',
               },
               {
                 value: 'Import workspace',
@@ -869,6 +870,7 @@ const Story = () => {
         <OTopRightUnder>
           {selectedNodes && selectedNodes.length === 1 && (
             <SidePanel
+              data-testid="side-panel"
               color={
                 theme.nodeColors[
                   COLORS[selectedNodes[0].type as ChatNodeTypes] as
@@ -894,6 +896,7 @@ const Story = () => {
                   <TypeChooser
                     onClick={() => changeType(selectedNodes[0].id, CHAT_NODE_TEXT_TYPE)}
                     selected={selectedNodes[0].type === CHAT_NODE_TEXT_TYPE}
+                    data-testid="text-type"
                   >
                     <FiMessageSquare />
                     <span>Text</span>
@@ -901,6 +904,7 @@ const Story = () => {
                   <TypeChooser
                     onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_ANSWER_TYPE)}
                     selected={selectedNodes[0].type === CHAT_NODE_ANSWER_TYPE}
+                    data-testid="answer-type"
                   >
                     <FiList />
                     <span>Answer</span>
@@ -908,6 +912,7 @@ const Story = () => {
                   <TypeChooser
                     onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_CONDITION_TYPE)}
                     selected={selectedNodes[0].type === CHAT_NODE_CONDITION_TYPE}
+                    data-testid="condition-type"
                   >
                     <FiHelpCircle />
                     <span>Condition</span>
@@ -932,6 +937,7 @@ const Story = () => {
         <OBottomLeft>
           {selectedWorkspace && (
             <FScreenListing
+              data-testid="chats-list"
               listName="Chats"
               items={chatsNames}
               icon={<FiMessageSquare />}
@@ -945,6 +951,7 @@ const Story = () => {
                   icon: <FiPlus />,
                   color: 'add',
                   onClick: addChat,
+                  testId: 'add-chat',
                 },
               ]}
             />
@@ -959,6 +966,7 @@ const Story = () => {
       )}
       {!!selectedChat && (
         <StyledReactFlow
+          data-testid="react-flow"
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           nodes={nodes.map((node) => ({
@@ -1011,7 +1019,6 @@ const Story = () => {
             scale={1}
             onStart={onStartDragToAddNewNode}
             onStop={onEndDragToAddNewNode}
-            nodeRef={newItemRef}
           >
             <CardAdd ref={newItemRef} isAddingNewNode={isAddingNewNode}>
               <ChatNodeCard
@@ -1022,6 +1029,7 @@ const Story = () => {
                   message: 'Add me!',
                   character: null,
                 }}
+                testId="add-node-handler"
               />
             </CardAdd>
           </Draggable>
@@ -1168,18 +1176,18 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   left: ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? '-185px' : '-110px')};
   z-index: 10;
   /* opacity: 0.6; */
-  transition: opacity 150ms ease-out,
+  transition: opacity ${({ theme }) => theme.transitions.superQuick}ms ease-out,
     left ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? 0 : 400)}ms
       cubic-bezier(0.23, 1.48, 0.325, 0.945);
-  height: 250px;
+  height: 249px;
   width: 175px;
   padding-top: 40px;
   &::before {
     content: '';
     position: absolute;
-    top: 3px;
+    top: 0;
     left: 0;
-    width: calc(100% - 2px);
+    width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0);
     backdrop-filter: blur(35px) saturate(200%);
@@ -1209,9 +1217,11 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
     }
   }
   & > * {
-    margin-left: -39px;
-    transition: ${({ isAddingNewNode }) =>
-      isAddingNewNode ? 'none' : 'opacity 200ms ease-out, transform 200ms ease-out'} !important;
+    position: relative;
+    margin-left: -38px;
+    margin-top: -3px;
+    transition: ${({ isAddingNewNode, theme }) =>
+      isAddingNewNode ? 'none' : `opacity ${theme.transitions.quick}ms ease-out, transform ${theme.transitions.quick}ms ease-out`} !important;
     transform: rotate(90deg);
   }
 `;

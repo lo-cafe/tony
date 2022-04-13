@@ -34,6 +34,7 @@ interface FScreenListingProps {
     color?: 'add' | 'delete';
     icon?: React.ReactNode;
     discrete?: boolean;
+    testId?: string;
   }[];
   rightIcon?: React.ReactNode;
   as?: keyof JSX.IntrinsicElements;
@@ -80,7 +81,6 @@ const getTransformedItems = ({
     ...recentItems,
     ...itemsNotInRecent.filter((x) => x.id !== selectedItemId),
   ].filter((x) => !!x) as Item[];
-  console.log(newItems)
   return getRecent ? newItems.slice(0, numberOfRecentItems) : newItems;
 };
 
@@ -99,6 +99,7 @@ const FScreenListing: FC<FScreenListingProps> = memo(
     rightIcon,
     as,
     className,
+    ...rest
   }) => {
     const [fullScreen, setFullScreen] = useState(false);
     const [leaving, setLeaving] = useState(false);
@@ -185,6 +186,7 @@ const FScreenListing: FC<FScreenListingProps> = memo(
         fullScreen={fullScreen}
         onClick={closeFullScreen}
         positionInFullScreen={positionInFullScreen}
+        {...rest}
       >
         <TransitionGroup component={null}>
           {itemsToIterate.map(({ id, name, disabled }) => (
@@ -208,7 +210,7 @@ const FScreenListing: FC<FScreenListingProps> = memo(
           ))}
         </TransitionGroup>
         {extraOptionsToIterate &&
-          extraOptionsToIterate.map(({ value, icon, onClick, color, onFileChange }) => (
+          extraOptionsToIterate.map(({ value, icon, onClick, color, onFileChange, testId }) => (
             <StyledFixedBtn
               key={value}
               value={value}
@@ -216,6 +218,7 @@ const FScreenListing: FC<FScreenListingProps> = memo(
               color={color}
               icon={icon}
               onFileChange={onFileChange}
+              data-testid={testId}
             />
           ))}
         {(!fullScreen || leaving) &&
@@ -241,14 +244,14 @@ const StyledFixedBtn = styled(FixedButton)`
   }
   &.item-enter-active {
     opacity: 1;
-    transition: opacity 500ms ease-in;
+    transition: opacity ${({ theme }) => theme.transitions.superSlow}ms ease-in;
   }
   &.item-exit {
     opacity: 1;
   }
   &.item-exit-active {
     opacity: 0;
-    transition: opacity 500ms ease-in;
+    transition: opacity ${({ theme }) => theme.transitions.superSlow}ms ease-in;
   }
 `;
 
@@ -289,7 +292,7 @@ const Wrapper = styled.div<WrapperProps>`
   height: 100%;
   display: flex;
   /* color: #424242; */
-  transition: backdrop-filter 300ms ease-out, background 300ms ease-out;
+  transition: backdrop-filter ${({ theme }) => theme.transitions.normal}ms ease-out, background ${({ theme }) => theme.transitions.normal}ms ease-out;
   align-items: flex-start;
   background: ${({ fullScreen, leaving, theme }) =>
     fullScreen && !leaving ? theme.colors.blurBg : transparentize(1, theme.colors.blurBg)};

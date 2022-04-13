@@ -91,7 +91,7 @@ const OptionButton = styled.button`
     font-weight: 600;
     border-radius: 8px;
     cursor: pointer;
-    transition: 150ms ease-out;
+    transition: ${({ theme }) => theme.transitions.superQuick}ms ease-out;
     margin: 1px 0;
     &:hover {
       background-color: ${({ theme }) => theme.nodeColors.accent};

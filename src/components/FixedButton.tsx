@@ -42,6 +42,7 @@ const FixedButton: FC<FixedButtonProps> = ({
   className,
   rightIcon,
   as,
+  ...rest
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [expandedDelete, _setExpandedDelete] = useState(false);
@@ -84,6 +85,7 @@ const FixedButton: FC<FixedButtonProps> = ({
       selected={selected}
       onClick={handleClick(() => onClick && onClick(data))}
       as={as}
+      {...rest}
     >
       {!!onFileChange && (
         <>
@@ -172,7 +174,7 @@ const FixedButtonWrapper = styled.button<{
   font-size: 13px;
   align-items: center;
   position: relative;
-  transition: background-color 300ms ease-out;
+  transition: background-color ${({ theme }) => theme.transitions.normal}ms ease-out;
   pointer-events: ${({ disabled }) => (disabled ? 'none' : 'auto')};
   color: ${({ color, disabled, theme }) =>
     disabled
@@ -187,7 +189,7 @@ const FixedButtonWrapper = styled.button<{
       ? `solid 2px ${theme.nodeColors.accent}`
       : `solid 1px ${theme.colors.blurBorderColor}`};
   backdrop-filter: blur(35px) saturate(200%);
-  transition: box-shadow 300ms ease-out, background 300ms ease-out;
+  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out, background ${({ theme }) => theme.transitions.normal}ms ease-out;
   user-select: none;
   &:hover {
     box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.15);
@@ -230,7 +232,7 @@ const FixedButtonInnerButton = styled.button<{ red?: boolean; opened?: boolean }
   &:hover {
     background: rgba(0, 0, 0, 0.1);
   }
-  transition: background-color 300ms ease-out, width 200ms ease-out;
+  transition: background-color ${({ theme }) => theme.transitions.normal}ms ease-out, width ${({ theme }) => theme.transitions.quick}ms ease-out;
   color: ${({ red }) => (red ? 'red' : 'inherit')};
   cursor: pointer;
 `;

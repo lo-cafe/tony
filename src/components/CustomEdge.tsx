@@ -96,7 +96,7 @@ const EdgeButton = styled.button`
   border-radius: 50%;
   font-size: 12px;
   line-height: 1;
-  transition: box-shadow 300ms ease-out, opacity 300ms ease-out;
+  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out, opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   /* opacity: 0; */
   &:hover {
     box-shadow: 0 0 6px 2px rgba(0, 0, 0, 0.08);

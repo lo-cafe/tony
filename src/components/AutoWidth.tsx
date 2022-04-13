@@ -12,7 +12,6 @@ const AutoWidth: FC<AutoWidthProps> = ({ children, state }) => {
   const [measured, setMeasured] = useState(false);
   const [entered, setEntered] = useState(false);
   const fakeChildrenRef = useRef<HTMLDivElement>(null);
-  const childrenRef = useRef<HTMLDivElement>(null);
   const measuredWidth = useRef(0);
   const { ref, width: currentWidth = 0 } = useResizeObserver<HTMLDivElement>();
 
@@ -35,7 +34,6 @@ const AutoWidth: FC<AutoWidthProps> = ({ children, state }) => {
     switch (state) {
       case 'entering':
         measure();
-        console.log(measuredWidth.current);
         setWidth(measuredWidth.current);
         break;
       case 'entered':
@@ -100,7 +98,8 @@ const Measurements = styled.div`
 const WidthMutatnt = styled.div<{
   state: 'unmounted' | 'entering' | 'entered' | 'exiting' | 'exited';
 }>`
-  transition: width 300ms ease-out, opacity 300ms ease-out;
+  transition: width ${({ theme }) => theme.transitions.normal}ms ease-out,
+    opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   opacity: ${({ state }) => (state === 'entered' || state === 'entering' ? 1 : 0)};
 `;
 
