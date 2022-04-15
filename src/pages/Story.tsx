@@ -1332,7 +1332,6 @@ const Textarea = styled.textarea`
   font-family: inherit;
   resize: vertical;
   min-height: 200px;
-  color: #424242;
   transition: background 0.2s ease-out;
   &:focus {
     background: ${({ theme }) =>
