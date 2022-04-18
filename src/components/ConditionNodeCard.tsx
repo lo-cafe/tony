@@ -4,6 +4,7 @@ import { FiHelpCircle } from 'react-icons/fi';
 import { Handle, Position, Node, Connection } from 'react-flow-renderer';
 import { darken, lighten, getLuminance } from 'polished';
 
+import useUserStore from '~/instances/userStore';
 import { light, dark } from '~/constants/colors';
 import LaceString from '~/components/LaceString';
 import { ID } from '~/types/data';
@@ -15,6 +16,7 @@ interface ConditionNodeCardProps {
 
 const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>> = memo(
   ({ id, data, selected, className }) => {
+    const { showNodeIds } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
       return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle, connection.targetHandle);

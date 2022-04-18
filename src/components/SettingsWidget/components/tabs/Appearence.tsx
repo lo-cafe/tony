@@ -9,6 +9,8 @@ import autoButton from '~/assets/autoButton.png';
 import Button from '~/components/Button';
 import Picker from '~/components/Picker';
 
+import Title from '../Title';
+
 const Appearence = () => {
   const themeType = useUserStore((s) => s.theme);
   const nodeColors = useUserStore((s) => s.nodeColors);
@@ -159,15 +161,6 @@ const Label = styled.label`
   font-weight: 600;
   display: flex;
   align-items: center;
-`;
-
-const Title = styled.div`
-  margin: 0;
-  margin-top: 16px;
-  font-size: 20px;
-  margin-bottom: 8px;
-  font-family: inherit;
-  font-weight: 700;
 `;
 
 const ColorsWrapper = styled.div`

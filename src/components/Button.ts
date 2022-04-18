@@ -11,8 +11,8 @@ const Button = styled.button<{ red?: boolean }>`
   background: ${({ red, theme }) => (red ? 'red' : theme.nodeColors.accent)};
   border: none;
   padding: 0 16px;
-  color: ${({ theme }) =>
-    getLuminance(theme.nodeColors.accent) > 0.4 ? colors.light.font : colors.dark.font};
+  color: ${({ theme, red }) =>
+    getLuminance(theme.nodeColors.accent) > 0.4 && !red ? colors.light.font : colors.dark.font};
   width: 100%;
   font-weight: 700;
   cursor: pointer;

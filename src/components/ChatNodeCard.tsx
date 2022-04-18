@@ -4,6 +4,7 @@ import { FiMessageSquare, FiUser, FiList } from 'react-icons/fi';
 import { Handle, Position, Node, Connection } from 'react-flow-renderer';
 import { darken, lighten, rgba, getLuminance } from 'polished';
 
+import useUserStore from '~/instances/userStore';
 import LaceString from '~/components/LaceString';
 import ContextMenuInjector from '~/components/ContextMenuInjector';
 import { ChatNodeData, ID, Character } from '~/types/data';
@@ -19,6 +20,7 @@ interface ChatNodeCardProps extends ChatNodeData {
 
 const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
   ({ type, id, data, selected, className, connectable, testId }) => {
+    const { showNodeIds } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
       return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle);
@@ -43,9 +45,11 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
             {type === CHAT_NODE_ANSWER_TYPE ? <FiList /> : <FiMessageSquare />}
             {type === CHAT_NODE_ANSWER_TYPE ? 'Answer' : 'Text'}
           </ItemTitle>
-          <IdTag>
-            <Id>{id}</Id>
-          </IdTag>
+          {showNodeIds && (
+            <IdTag>
+              <Id>{id}</Id>
+            </IdTag>
+          )}
         </ItemTitleBar>
         <ItemWrapper>
           <ItemBody>{data.message}</ItemBody>

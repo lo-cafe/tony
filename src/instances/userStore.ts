@@ -14,16 +14,22 @@ interface NodeColorsThemes {
   dark: NodeColors;
 }
 
+interface Prefereces {
+  showNodeIds: boolean;
+}
+
 interface UserStore {
   email: string;
   uid: string;
   theme: ThemeTypes;
   nodeColors: NodeColorsThemes;
+  preferences: Prefereces;
   setEmail: (email: string) => void;
   setUid: (uid: string) => void;
   setTheme: (theme: ThemeTypes) => void;
   setLightColors: (theme: Partial<NodeColors>) => void;
   setDarkColors: (theme: Partial<NodeColors>) => void;
+  setPreferences: (theme: Partial<Prefereces>) => void;
 }
 
 export const initialLight = {
@@ -51,6 +57,9 @@ const useUserStore = create<UserStore>(
       uid: '',
       theme: 'auto',
       nodeColors: { light: initialLight, dark: initialDark },
+      preferences: {
+        showNodeIds: true,
+      },
       setEmail: (email) => set(() => ({ email })),
       setUid: (uid) => set(() => ({ uid })),
       setTheme: (theme) => set(() => ({ theme })),
@@ -62,6 +71,8 @@ const useUserStore = create<UserStore>(
         set((state) => ({
           nodeColors: { ...state.nodeColors, dark: { ...state.nodeColors.dark, ...colors } },
         })),
+      setPreferences: (preferences) =>
+        set((old) => ({ ...old, preferences: { ...old.preferences, ...preferences } })),
     })
   )
 );
