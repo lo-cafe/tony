@@ -31,7 +31,13 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
         className={className}
         data-testid={testId}
       >
-        <TargetHandle type="target" isConnectable={connectable} position={Position.Top} />
+        <TargetHandle
+          isValidConnection={isValidConnection}
+          type="target"
+          id="target"
+          isConnectable={connectable}
+          position={Position.Top}
+        />
         <ItemTitleBar>
           <ItemTitle data-testid="node-type">
             {type === CHAT_NODE_ANSWER_TYPE ? <FiList /> : <FiMessageSquare />}
@@ -220,7 +226,8 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   cursor: pointer;
   flex-direction: column;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out, opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
+  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out,
+    opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
   animation: ${({ cardType, theme }) =>
       cardType === 'answer'
@@ -228,7 +235,8 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
         : putInPlace(rgba(theme.nodeColors.textNode, 0.5))}
     1s ease-out;
   ${ItemTitleBar}, ${Tag}, ${SourceHandle} {
-    transition: transform ${({ theme }) => theme.transitions.normal}ms ease-out, background ${({ theme }) => theme.transitions.normal}ms ease-out;
+    transition: transform ${({ theme }) => theme.transitions.normal}ms ease-out,
+      background ${({ theme }) => theme.transitions.normal}ms ease-out;
     color: ${({ cardType, theme }) =>
       getLuminance(
         cardType === 'answer' ? theme.nodeColors.answerNode : theme.nodeColors.textNode

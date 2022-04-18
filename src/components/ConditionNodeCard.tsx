@@ -10,14 +10,14 @@ import { ID } from '~/types/data';
 
 interface ConditionNodeCardProps {
   fadeOut?: boolean;
-  isConnectionValid?: (source: ID, target: ID, sourceHandle: string | null) => boolean;
+  isConnectionValid?: (source: ID, target: ID, sourceHandle: string | null, targetHandle: string | null) => boolean;
 }
 
 const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>> = memo(
   ({ id, data, selected, className }) => {
     const isValidConnection = (connection: Connection) => {
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
-      return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle);
+      return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle, connection.targetHandle);
     };
     return (
       <Item
@@ -26,7 +26,12 @@ const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>
         selected={selected}
         className={className}
       >
-        <TargetHandle type="target" position={Position.Top} />
+        <TargetHandle
+          isValidConnection={isValidConnection}
+          type="target"
+          id="target"
+          position={Position.Top}
+        />
         <ItemTitleBar>
           <ItemTitle data-testid="node-type">
             <ConditionHandle
@@ -166,7 +171,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
 `;
 
 const ConditionHandle = styled(SourceHandle)`
-  background: ${({ theme }) => getLuminance(theme.colors.cardBg) > 0.4 ? '#424242' : '#f5f5f5'};
+  background: ${({ theme }) => (getLuminance(theme.colors.cardBg) > 0.4 ? '#424242' : '#f5f5f5')};
   border-color: ${({ theme }) => theme.colors.cardBg};
   left: -27px;
   &:hover {
@@ -234,7 +239,8 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
   cursor: pointer;
   flex-direction: column;
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out, opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
+  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out,
+    opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
   animation: ${putInPlace} 1s ease-out;
   user-select: none;

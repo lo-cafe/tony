@@ -13,11 +13,13 @@
   },
   "dependencies": {
     "@popperjs/core": "^2.11.4",
+    "@types/memoizee": "^0.4.7",
     "axios": "^0.26.0",
     "d3": "^7.3.0",
     "firebase": "^9.6.7",
     "jszip": "^3.7.1",
     "lodash": "^4.17.21",
+    "memoizee": "^0.4.15",
     "nanoid": "^3.3.1",
     "polished": "^4.2.1",
     "random-words": "^1.1.2",

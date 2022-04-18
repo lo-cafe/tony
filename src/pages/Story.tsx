@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import styled, { css, useTheme } from 'styled-components';
+import memoizee from 'memoizee';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash/cloneDeep';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
@@ -163,8 +164,10 @@ const Story = () => {
   const getSelectedChat = (obj: DataStructure): Chat | null =>
     getSelectedWorkspace(obj)?.chats.find((c) => c.id === selectedChatId) || null;
 
-  const getRelatedEdges = (nodeId: ID) =>
-    edges.filter((e) => e.source === nodeId || e.target === nodeId);
+  const getRelatedEdges = useCallback(
+    memoizee((nodeId: ID) => edges.filter((e) => e.source === nodeId || e.target === nodeId)),
+    [edges]
+  );
 
   const selectedWorkspace = getSelectedWorkspace(data.current);
   const selectedChat = getSelectedChat(data.current);
@@ -669,101 +672,111 @@ const Story = () => {
     reactFlowInstance.zoomTo(1, { duration: 500 });
   };
 
-  const isConnectionValid = (
-    sourceId: ID,
-    targetId: ID,
-    sourceHandle: string | null = 'a'
-  ): boolean => {
-    const sourceNode = nodes.find((x) => x.id === sourceId);
-    const targetNode = nodes.find((x) => x.id === targetId);
-    if (!sourceNode || !targetNode) return false;
+  const isConnectionValid = useCallback(
+    memoizee(
+      (
+        sourceId: ID,
+        targetId: ID,
+        sourceHandle: string | null,
+        _targetHandle: string | null
+      ): boolean => {
+        const _sourceNode = nodes.find((x) => x.id === sourceId);
+        const _targetNode = nodes.find((x) => x.id === targetId);
+        const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
+        const targetNode = sourceHandle === 'target' ? _sourceNode : _targetNode;
+        if (!sourceNode || !targetNode) return false;
 
-    const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
-      const rules = {
-        [CHAT_NODE_TEXT_TYPE]: () =>
-          targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
-          (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
-        [CHAT_NODE_ANSWER_TYPE]: () =>
-          targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
-        [CHAT_NODE_CONDITION_TYPE]: () =>
-          sourceHandle === 'condition'
-            ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
-            : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+        const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
+          const rules = {
+            [CHAT_NODE_TEXT_TYPE]: () =>
+              targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
               (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
-      };
-      return rules[internalSourceNode.type as keyof typeof rules]();
-    };
+            [CHAT_NODE_ANSWER_TYPE]: () =>
+              targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
+            [CHAT_NODE_CONDITION_TYPE]: () =>
+              sourceHandle === 'condition'
+                ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
+                : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+                  (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
+          };
+          return rules[internalSourceNode.type as keyof typeof rules]();
+        };
 
-    const getNextNodes = (
-      node: ChatNode,
-      handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
-    ) => {
-      const relatedEdges = getRelatedEdges(node.id);
-      const nextNodes = nodes.filter((x) =>
-        relatedEdges
-          .filter((x) => x.source === node.id && x.sourceHandle === handler)
-          .map((e) => e.target)
-          .includes(x.id)
-      );
-      return nextNodes;
-    };
+        const getNextNodes = (
+          node: ChatNode,
+          handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
+        ) => {
+          const relatedEdges = getRelatedEdges(node.id);
+          const nextNodes = nodes.filter((x) =>
+            relatedEdges
+              .filter((x) => x.source === node.id && x.sourceHandle === handler)
+              .map((e) => e.target)
+              .includes(x.id)
+          );
+          return nextNodes;
+        };
 
-    const getActualIsItAMatch = (
-      childrenNodes: ChatNode[],
-      _base: ChatNode[] = [],
-      alternateSource?: ChatNode
-    ): boolean => {
-      if (childrenNodes.length === 0) return true;
-      const base: ChatNode[] = [..._base];
-      const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
-      const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
-      base.push(...normalNodes);
-      if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
-      let yesChildren: ChatNode[] = [];
-      let noChildren: ChatNode[] = [];
-      conditionNodes.forEach((nd) => {
-        yesChildren =
-          nd.id === sourceId && sourceHandle === 'yes'
-            ? [targetNode, ...getNextNodes(nd, 'yes')]
-            : getNextNodes(nd, 'yes');
-        noChildren =
-          nd.id === sourceId && sourceHandle === 'no'
-            ? [targetNode, ...getNextNodes(nd, 'no')]
-            : getNextNodes(nd, 'no');
-      });
-      return (
-        getActualIsItAMatch(yesChildren, base, alternateSource) &&
-        getActualIsItAMatch(noChildren, base, alternateSource)
-      );
-    };
+        const getActualIsItAMatch = (
+          childrenNodes: ChatNode[],
+          _base: ChatNode[] = [],
+          alternateSource?: ChatNode
+        ): boolean => {
+          if (childrenNodes.length === 0) return true;
+          const base: ChatNode[] = [..._base];
+          const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
+          const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
+          base.push(...normalNodes);
+          if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
+          let yesChildren: ChatNode[] = [];
+          let noChildren: ChatNode[] = [];
+          conditionNodes.forEach((nd) => {
+            yesChildren =
+              nd.id === sourceId && sourceHandle === 'yes'
+                ? [targetNode, ...getNextNodes(nd, 'yes')]
+                : getNextNodes(nd, 'yes');
+            noChildren =
+              nd.id === sourceId && sourceHandle === 'no'
+                ? [targetNode, ...getNextNodes(nd, 'no')]
+                : getNextNodes(nd, 'no');
+          });
+          return (
+            getActualIsItAMatch(yesChildren, base, alternateSource) &&
+            getActualIsItAMatch(noChildren, base, alternateSource)
+          );
+        };
 
-    const findNearestNormalParents = (node: ChatNode) => {
-      const relatedEdges = getRelatedEdges(node.id);
-      const parentNodes = nodes.filter((x) =>
-        relatedEdges
-          .filter((e) => e.target === node.id)
-          .map((e) => e.source)
-          .includes(x.id)
-      );
-      const newParentNodes: ChatNode[] = parentNodes
-        .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? findNearestNormalParents(x) : x))
-        .flat();
-      return newParentNodes;
-    };
+        const findNearestNormalParents = (node: ChatNode) => {
+          const relatedEdges = getRelatedEdges(node.id);
+          const parentNodes = nodes.filter((x) =>
+            relatedEdges
+              .filter((e) => e.target === node.id)
+              .map((e) => e.source)
+              .includes(x.id)
+          );
+          const newParentNodes: ChatNode[] = parentNodes
+            .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? findNearestNormalParents(x) : x))
+            .flat();
+          return newParentNodes;
+        };
 
-    if (sourceNode.type !== CHAT_NODE_CONDITION_TYPE) {
-      return getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode)]);
-    }
+        if (sourceNode.type !== CHAT_NODE_CONDITION_TYPE) {
+          return getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode)]);
+        }
 
-    if (sourceHandle === 'condition') {
-      return isItAMatch(sourceNode, [targetNode, ...getNextNodes(sourceNode, sourceHandle)]);
-    }
+        if (sourceHandle === 'condition') {
+          return isItAMatch(sourceNode, [targetNode, ...getNextNodes(sourceNode, sourceHandle)]);
+        }
 
-    return (
-      getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
-      findNearestNormalParents(sourceNode).every((x) => getActualIsItAMatch(getNextNodes(x), [], x))
-    );
-  };
+        return (
+          getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
+          findNearestNormalParents(sourceNode).every((x) =>
+            getActualIsItAMatch(getNextNodes(x), [], x)
+          )
+        );
+      }
+    ),
+    [nodes, getRelatedEdges]
+  );
 
   return (
     <>
@@ -1221,7 +1234,9 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
     margin-left: -38px;
     margin-top: -3px;
     transition: ${({ isAddingNewNode, theme }) =>
-      isAddingNewNode ? 'none' : `opacity ${theme.transitions.quick}ms ease-out, transform ${theme.transitions.quick}ms ease-out`} !important;
+      isAddingNewNode
+        ? 'none'
+        : `opacity ${theme.transitions.quick}ms ease-out, transform ${theme.transitions.quick}ms ease-out`} !important;
     transform: rotate(90deg);
   }
 `;
