@@ -166,7 +166,7 @@ const Story = () => {
 
   const getRelatedEdges = useCallback(
     memoizee((nodeId: ID) => edges.filter((e) => e.source === nodeId || e.target === nodeId)),
-    [edges]
+    [nodes, edges]
   );
 
   const selectedWorkspace = getSelectedWorkspace(data.current);
@@ -680,6 +680,7 @@ const Story = () => {
         sourceHandle: string | null,
         _targetHandle: string | null
       ): boolean => {
+        console.log('lol')
         const _sourceNode = nodes.find((x) => x.id === sourceId);
         const _targetNode = nodes.find((x) => x.id === targetId);
         const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
