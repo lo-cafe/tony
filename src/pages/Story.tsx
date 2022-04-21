@@ -680,6 +680,7 @@ const Story = () => {
         sourceHandle: string | null,
         _targetHandle: string | null
       ): boolean => {
+        console.log('ha')
         const _sourceNode = nodes.find((x) => x.id === sourceId);
         const _targetNode = nodes.find((x) => x.id === targetId);
         const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
