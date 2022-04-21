@@ -780,6 +780,8 @@ const Story = () => {
     [nodes, getRelatedEdges]
   );
 
+  console.log('isConnectionValid', isConnectionValid)
+
   return (
     <>
       {!!whatToPlay && (
