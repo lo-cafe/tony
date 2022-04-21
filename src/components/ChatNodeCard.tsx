@@ -15,16 +15,26 @@ interface ChatNodeCardProps extends ChatNodeData {
   fadeOut?: boolean;
   setCharacter?: (itemId: ID, charId: ID) => void;
   characters?: Character[];
-  isConnectionValid?: (source: ID, target: ID, sourceHandle: string | null) => boolean;
+  isConnectionValid?: (
+    source: ID,
+    target: ID,
+    sourceHandle: string | null,
+    targetHandle: string | null
+  ) => boolean;
 }
 
 const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
   ({ type, id, data, selected, className, connectable, testId }) => {
     const { showNodeIds } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
-      console.log('he')
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
-      return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle);
+      console.log('hy');
+      return data.isConnectionValid(
+        connection.source,
+        connection.target,
+        connection.sourceHandle,
+        connection.targetHandle
+      );
     };
     return (
       <Item
