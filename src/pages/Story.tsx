@@ -673,114 +673,112 @@ const Story = () => {
   };
 
   const isConnectionValid = useCallback(
-    memoizee(
-      (
-        sourceId: ID,
-        targetId: ID,
-        sourceHandle: string | null,
-        _targetHandle: string | null
-      ): boolean => {
-        console.log('ha')
-        const _sourceNode = nodes.find((x) => x.id === sourceId);
-        const _targetNode = nodes.find((x) => x.id === targetId);
-        const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
-        const targetNode = sourceHandle === 'target' ? _sourceNode : _targetNode;
-        if (!sourceNode || !targetNode) return false;
+    (
+      sourceId: ID,
+      targetId: ID,
+      sourceHandle: string | null,
+      _targetHandle: string | null
+    ): boolean => {
+      console.log('ha');
+      const _sourceNode = nodes.find((x) => x.id === sourceId);
+      const _targetNode = nodes.find((x) => x.id === targetId);
+      const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
+      const targetNode = sourceHandle === 'target' ? _sourceNode : _targetNode;
+      if (!sourceNode || !targetNode) return false;
 
-        const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
-          const rules = {
-            [CHAT_NODE_TEXT_TYPE]: () =>
-              targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
-              (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
-            [CHAT_NODE_ANSWER_TYPE]: () =>
-              targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
-            [CHAT_NODE_CONDITION_TYPE]: () =>
-              sourceHandle === 'condition'
-                ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
-                : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
-                  (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
-          };
-          return rules[internalSourceNode.type as keyof typeof rules]();
+      const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
+        const rules = {
+          [CHAT_NODE_TEXT_TYPE]: () =>
+            targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+            (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
+          [CHAT_NODE_ANSWER_TYPE]: () =>
+            targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
+          [CHAT_NODE_CONDITION_TYPE]: () =>
+            sourceHandle === 'condition'
+              ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
+              : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+                (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
         };
+        return rules[internalSourceNode.type as keyof typeof rules]();
+      };
 
-        const getNextNodes = (
-          node: ChatNode,
-          handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
-        ) => {
-          const relatedEdges = getRelatedEdges(node.id);
-          const nextNodes = nodes.filter((x) =>
-            relatedEdges
-              .filter((x) => x.source === node.id && x.sourceHandle === handler)
-              .map((e) => e.target)
-              .includes(x.id)
-          );
-          return nextNodes;
-          // hihi
-        };
-
-        const getActualIsItAMatch = (
-          childrenNodes: ChatNode[],
-          _base: ChatNode[] = [],
-          alternateSource?: ChatNode
-        ): boolean => {
-          if (childrenNodes.length === 0) return true;
-          const base: ChatNode[] = [..._base];
-          const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
-          const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
-          base.push(...normalNodes);
-          if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
-          let yesChildren: ChatNode[] = [];
-          let noChildren: ChatNode[] = [];
-          conditionNodes.forEach((nd) => {
-            yesChildren =
-              nd.id === sourceId && sourceHandle === 'yes'
-                ? [targetNode, ...getNextNodes(nd, 'yes')]
-                : getNextNodes(nd, 'yes');
-            noChildren =
-              nd.id === sourceId && sourceHandle === 'no'
-                ? [targetNode, ...getNextNodes(nd, 'no')]
-                : getNextNodes(nd, 'no');
-          });
-          return (
-            getActualIsItAMatch(yesChildren, base, alternateSource) &&
-            getActualIsItAMatch(noChildren, base, alternateSource)
-          );
-        };
-
-        const findNearestNormalParents = (node: ChatNode) => {
-          const relatedEdges = getRelatedEdges(node.id);
-          const parentNodes = nodes.filter((x) =>
-            relatedEdges
-              .filter((e) => e.target === node.id)
-              .map((e) => e.source)
-              .includes(x.id)
-          );
-          const newParentNodes: ChatNode[] = parentNodes
-            .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? findNearestNormalParents(x) : x))
-            .flat();
-          return newParentNodes;
-        };
-
-        if (sourceNode.type !== CHAT_NODE_CONDITION_TYPE) {
-          return getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode)]);
-        }
-
-        if (sourceHandle === 'condition') {
-          return isItAMatch(sourceNode, [targetNode, ...getNextNodes(sourceNode, sourceHandle)]);
-        }
-
-        return (
-          getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
-          findNearestNormalParents(sourceNode).every((x) =>
-            getActualIsItAMatch(getNextNodes(x), [], x)
-          )
+      const getNextNodes = (
+        node: ChatNode,
+        handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
+      ) => {
+        const relatedEdges = getRelatedEdges(node.id);
+        const nextNodes = nodes.filter((x) =>
+          relatedEdges
+            .filter((x) => x.source === node.id && x.sourceHandle === handler)
+            .map((e) => e.target)
+            .includes(x.id)
         );
+        return nextNodes;
+        // hihi
+      };
+
+      const getActualIsItAMatch = (
+        childrenNodes: ChatNode[],
+        _base: ChatNode[] = [],
+        alternateSource?: ChatNode
+      ): boolean => {
+        if (childrenNodes.length === 0) return true;
+        const base: ChatNode[] = [..._base];
+        const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
+        const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
+        base.push(...normalNodes);
+        if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
+        let yesChildren: ChatNode[] = [];
+        let noChildren: ChatNode[] = [];
+        conditionNodes.forEach((nd) => {
+          yesChildren =
+            nd.id === sourceId && sourceHandle === 'yes'
+              ? [targetNode, ...getNextNodes(nd, 'yes')]
+              : getNextNodes(nd, 'yes');
+          noChildren =
+            nd.id === sourceId && sourceHandle === 'no'
+              ? [targetNode, ...getNextNodes(nd, 'no')]
+              : getNextNodes(nd, 'no');
+        });
+        return (
+          getActualIsItAMatch(yesChildren, base, alternateSource) &&
+          getActualIsItAMatch(noChildren, base, alternateSource)
+        );
+      };
+
+      const findNearestNormalParents = (node: ChatNode) => {
+        const relatedEdges = getRelatedEdges(node.id);
+        const parentNodes = nodes.filter((x) =>
+          relatedEdges
+            .filter((e) => e.target === node.id)
+            .map((e) => e.source)
+            .includes(x.id)
+        );
+        const newParentNodes: ChatNode[] = parentNodes
+          .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? findNearestNormalParents(x) : x))
+          .flat();
+        return newParentNodes;
+      };
+
+      if (sourceNode.type !== CHAT_NODE_CONDITION_TYPE) {
+        return getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode)]);
       }
-    ),
+
+      if (sourceHandle === 'condition') {
+        return isItAMatch(sourceNode, [targetNode, ...getNextNodes(sourceNode, sourceHandle)]);
+      }
+
+      return (
+        getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
+        findNearestNormalParents(sourceNode).every((x) =>
+          getActualIsItAMatch(getNextNodes(x), [], x)
+        )
+      );
+    },
     [nodes, getRelatedEdges]
   );
 
-  console.log('isConnectionValid', isConnectionValid)
+  console.log('isConnectionValid', isConnectionValid);
 
   return (
     <>
