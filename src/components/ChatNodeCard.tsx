@@ -27,10 +27,7 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
   ({ type, id, data, selected, className, connectable, testId }) => {
     const { showNodeIds } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
-      console.log(connection, 'hy');
-      console.log(data.isConnectionValid, 'hu');
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
-      console.log('hy');
       return data.isConnectionValid(
         connection.source,
         connection.target,

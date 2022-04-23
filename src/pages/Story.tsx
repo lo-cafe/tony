@@ -673,13 +673,12 @@ const Story = () => {
   };
 
   const isConnectionValid = useCallback(
-    (
+    memoizee((
       sourceId: ID,
       targetId: ID,
       sourceHandle: string | null,
       _targetHandle: string | null
     ): boolean => {
-      console.log('ha');
       const _sourceNode = nodes.find((x) => x.id === sourceId);
       const _targetNode = nodes.find((x) => x.id === targetId);
       const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
@@ -774,11 +773,9 @@ const Story = () => {
           getActualIsItAMatch(getNextNodes(x), [], x)
         )
       );
-    },
+    }),
     [nodes, getRelatedEdges]
   );
-
-  console.log('isConnectionValid', isConnectionValid);
 
   return (
     <>
