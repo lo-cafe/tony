@@ -8,8 +8,9 @@ import darkButton from '~/assets/darkButton.png';
 import autoButton from '~/assets/autoButton.png';
 import Button from '~/components/Button';
 import Picker from '~/components/Picker';
+import Toggle from '~/components/Toggle';
 
-import Title from '../Title';
+import Title from '~/components/Title';
 
 const Appearence = () => {
   const themeType = useUserStore((s) => s.theme);
@@ -60,14 +61,10 @@ const Appearence = () => {
       </ColorsWrapper>
       <TitleWrapper>
         <Title>{mirrorColors ? 'Colors' : 'Light colors'}</Title>
-        <Label>
+        <UnifyWrapper>
           UNIFY COLORS
-          <input
-            checked={mirrorColors}
-            onChange={(e) => setMirrorColors(e.target.checked)}
-            type="checkbox"
-          />
-        </Label>
+          <Toggle checked={mirrorColors} onChange={(e) => setMirrorColors(e.target.checked)} height={14} />
+        </UnifyWrapper>
       </TitleWrapper>
 
       <ColorsWrapper>
@@ -155,10 +152,11 @@ const TitleWrapper = styled.div`
   align-items: baseline;
 `;
 
-const Label = styled.label`
+const UnifyWrapper = styled.div`
   font-family: inherit;
   font-size: 12px;
   font-weight: 600;
+  gap: 6px;
   display: flex;
   align-items: center;
 `;

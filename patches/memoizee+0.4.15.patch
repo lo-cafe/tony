@@ -1,12 +1,13 @@
 diff --git a/node_modules/memoizee/index.js b/node_modules/memoizee/index.js
-index 6731a0d..94bc607 100644
+index 6731a0d..cd5a59f 100644
 --- a/node_modules/memoizee/index.js
 +++ b/node_modules/memoizee/index.js
-@@ -29,6 +29,7 @@ module.exports = function (fn/*, options*/) {
+@@ -29,6 +29,8 @@ module.exports = function (fn/*, options*/) {
  	if (options.maxAge) require("./ext/max-age");
  	if (options.max) require("./ext/max");
  	if (options.refCounter) require("./ext/ref-counter");
-+	console.log('')
++	setTimeout(() => {
++	}, 0);
  
  	return plain(fn, options);
  };

@@ -46,6 +46,7 @@ import {
   ChatNodeTypes,
 } from '~/types/data';
 
+import Title from '~/components/Title';
 import discordIcon from '~/components/discord.svg';
 import LoginWidget from '~/components/LoginWidget';
 import SettingsWidget from '~/components/SettingsWidget';
@@ -262,10 +263,12 @@ const Story = () => {
     );
   };
 
-  const changeType = (id: ID, type: ChatNodeTypes) => {
+  const changeTypes = (targetNds: ChatNode[], type: ChatNodeTypes) => {
+    if (!targetNds.length) return;
+    const targetIds = targetNds.map((nd) => nd.id);
     setNodes(
       nodes.map((item) =>
-        item.id === id
+        targetIds.includes(item.id)
           ? {
               ...item,
               type,
@@ -274,8 +277,10 @@ const Story = () => {
       )
     );
     // if (type === CHAT_NODE_CONDITION_TYPE)
-    setEdges(edges.filter((edg) => edg.source !== id && edg.target !== id));
-    updateNodeInternals(id);
+    setEdges(
+      edges.filter((edg) => !targetIds.includes(edg.source) && !targetIds.includes(edg.source))
+    );
+    targetIds.forEach((id) => updateNodeInternals(id));
   };
 
   const deleteChat = (targetId: ID) => {
@@ -673,107 +678,109 @@ const Story = () => {
   };
 
   const isConnectionValid = useCallback(
-    memoizee((
-      sourceId: ID,
-      targetId: ID,
-      sourceHandle: string | null,
-      _targetHandle: string | null
-    ): boolean => {
-      const _sourceNode = nodes.find((x) => x.id === sourceId);
-      const _targetNode = nodes.find((x) => x.id === targetId);
-      const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
-      const targetNode = sourceHandle === 'target' ? _sourceNode : _targetNode;
-      if (!sourceNode || !targetNode) return false;
-
-      const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
-        const rules = {
-          [CHAT_NODE_TEXT_TYPE]: () =>
-            targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
-            (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
-          [CHAT_NODE_ANSWER_TYPE]: () =>
-            targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
-          [CHAT_NODE_CONDITION_TYPE]: () =>
-            sourceHandle === 'condition'
-              ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
-              : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
-                (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
-        };
-        return rules[internalSourceNode.type as keyof typeof rules]();
-      };
-
-      const getNextNodes = (
-        node: ChatNode,
-        handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
-      ) => {
-        const relatedEdges = getRelatedEdges(node.id);
-        const nextNodes = nodes.filter((x) =>
-          relatedEdges
-            .filter((x) => x.source === node.id && x.sourceHandle === handler)
-            .map((e) => e.target)
-            .includes(x.id)
-        );
-        return nextNodes;
-        // hihi
-      };
-
-      const getActualIsItAMatch = (
-        childrenNodes: ChatNode[],
-        _base: ChatNode[] = [],
-        alternateSource?: ChatNode
+    memoizee(
+      (
+        sourceId: ID,
+        targetId: ID,
+        sourceHandle: string | null,
+        _targetHandle: string | null
       ): boolean => {
-        if (childrenNodes.length === 0) return true;
-        const base: ChatNode[] = [..._base];
-        const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
-        const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
-        base.push(...normalNodes);
-        if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
-        let yesChildren: ChatNode[] = [];
-        let noChildren: ChatNode[] = [];
-        conditionNodes.forEach((nd) => {
-          yesChildren =
-            nd.id === sourceId && sourceHandle === 'yes'
-              ? [targetNode, ...getNextNodes(nd, 'yes')]
-              : getNextNodes(nd, 'yes');
-          noChildren =
-            nd.id === sourceId && sourceHandle === 'no'
-              ? [targetNode, ...getNextNodes(nd, 'no')]
-              : getNextNodes(nd, 'no');
-        });
+        const _sourceNode = nodes.find((x) => x.id === sourceId);
+        const _targetNode = nodes.find((x) => x.id === targetId);
+        const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
+        const targetNode = sourceHandle === 'target' ? _sourceNode : _targetNode;
+        if (!sourceNode || !targetNode) return false;
+
+        const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
+          const rules = {
+            [CHAT_NODE_TEXT_TYPE]: () =>
+              targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+              (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
+            [CHAT_NODE_ANSWER_TYPE]: () =>
+              targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
+            [CHAT_NODE_CONDITION_TYPE]: () =>
+              sourceHandle === 'condition'
+                ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
+                : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
+                  (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
+          };
+          return rules[internalSourceNode.type as keyof typeof rules]();
+        };
+
+        const getNextNodes = (
+          node: ChatNode,
+          handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
+        ) => {
+          const relatedEdges = getRelatedEdges(node.id);
+          const nextNodes = nodes.filter((x) =>
+            relatedEdges
+              .filter((x) => x.source === node.id && x.sourceHandle === handler)
+              .map((e) => e.target)
+              .includes(x.id)
+          );
+          return nextNodes;
+          // hihi
+        };
+
+        const getActualIsItAMatch = (
+          childrenNodes: ChatNode[],
+          _base: ChatNode[] = [],
+          alternateSource?: ChatNode
+        ): boolean => {
+          if (childrenNodes.length === 0) return true;
+          const base: ChatNode[] = [..._base];
+          const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
+          const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
+          base.push(...normalNodes);
+          if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
+          let yesChildren: ChatNode[] = [];
+          let noChildren: ChatNode[] = [];
+          conditionNodes.forEach((nd) => {
+            yesChildren =
+              nd.id === sourceId && sourceHandle === 'yes'
+                ? [targetNode, ...getNextNodes(nd, 'yes')]
+                : getNextNodes(nd, 'yes');
+            noChildren =
+              nd.id === sourceId && sourceHandle === 'no'
+                ? [targetNode, ...getNextNodes(nd, 'no')]
+                : getNextNodes(nd, 'no');
+          });
+          return (
+            getActualIsItAMatch(yesChildren, base, alternateSource) &&
+            getActualIsItAMatch(noChildren, base, alternateSource)
+          );
+        };
+
+        const findNearestNormalParents = (node: ChatNode) => {
+          const relatedEdges = getRelatedEdges(node.id);
+          const parentNodes = nodes.filter((x) =>
+            relatedEdges
+              .filter((e) => e.target === node.id)
+              .map((e) => e.source)
+              .includes(x.id)
+          );
+          const newParentNodes: ChatNode[] = parentNodes
+            .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? findNearestNormalParents(x) : x))
+            .flat();
+          return newParentNodes;
+        };
+
+        if (sourceNode.type !== CHAT_NODE_CONDITION_TYPE) {
+          return getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode)]);
+        }
+
+        if (sourceHandle === 'condition') {
+          return isItAMatch(sourceNode, [targetNode, ...getNextNodes(sourceNode, sourceHandle)]);
+        }
+
         return (
-          getActualIsItAMatch(yesChildren, base, alternateSource) &&
-          getActualIsItAMatch(noChildren, base, alternateSource)
+          getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
+          findNearestNormalParents(sourceNode).every((x) =>
+            getActualIsItAMatch(getNextNodes(x), [], x)
+          )
         );
-      };
-
-      const findNearestNormalParents = (node: ChatNode) => {
-        const relatedEdges = getRelatedEdges(node.id);
-        const parentNodes = nodes.filter((x) =>
-          relatedEdges
-            .filter((e) => e.target === node.id)
-            .map((e) => e.source)
-            .includes(x.id)
-        );
-        const newParentNodes: ChatNode[] = parentNodes
-          .map((x) => (x.type === CHAT_NODE_CONDITION_TYPE ? findNearestNormalParents(x) : x))
-          .flat();
-        return newParentNodes;
-      };
-
-      if (sourceNode.type !== CHAT_NODE_CONDITION_TYPE) {
-        return getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode)]);
       }
-
-      if (sourceHandle === 'condition') {
-        return isItAMatch(sourceNode, [targetNode, ...getNextNodes(sourceNode, sourceHandle)]);
-      }
-
-      return (
-        getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
-        findNearestNormalParents(sourceNode).every((x) =>
-          getActualIsItAMatch(getNextNodes(x), [], x)
-        )
-      );
-    }),
+    ),
     [nodes, getRelatedEdges]
   );
 
@@ -853,11 +860,6 @@ const Story = () => {
           )}
         </OTopLeftUnder>
         <OTopRight>
-          {/* <FixedButton
-            onClick={() => setTheme(themes[themes.indexOf(currentTheme) + 1] || themes[0])}
-            color="add"
-            value={capitalize(currentTheme)}
-          /> */}
           <SettingsWidget />
           <FixedButton
             disabled={!selectedNodes || selectedNodes.length !== 1}
@@ -880,10 +882,11 @@ const Story = () => {
           <LoginWidget />
         </OTopRight>
         <OTopRightUnder>
-          {selectedNodes && selectedNodes.length === 1 && (
+          {selectedNodes?.length > 0 && (
             <SidePanel
               data-testid="side-panel"
-              color={
+              tagColor={
+                selectedNodes.length === 1 &&
                 theme.nodeColors[
                   COLORS[selectedNodes[0].type as ChatNodeTypes] as
                     | 'answerNode'
@@ -893,50 +896,55 @@ const Story = () => {
               }
             >
               <SidePanelContent>
-                <ItemTitleBar>
-                  <ItemTitle>
-                    {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE ? (
-                      <FiMessageSquare />
-                    ) : (
-                      <FiList />
-                    )}
-                    {selectedNodes[0].type}
-                  </ItemTitle>
-                  <IdTag>{selectedNodes[0].id}</IdTag>
-                </ItemTitleBar>
+                {selectedNodes.length === 1 ? (
+                  <ItemTitleBar>
+                    <ItemTitle>
+                      {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE ? (
+                        <FiMessageSquare />
+                      ) : (
+                        <FiList />
+                      )}
+                      {selectedNodes[0].type}
+                    </ItemTitle>
+                    <IdTag>{selectedNodes[0].id}</IdTag>
+                  </ItemTitleBar>
+                ) : (
+                  <Title style={{ margin: 0 }}>{selectedNodes.length} nodes selected</Title>
+                )}
                 <TypeChooserWrapper>
                   <TypeChooser
-                    onClick={() => changeType(selectedNodes[0].id, CHAT_NODE_TEXT_TYPE)}
-                    selected={selectedNodes[0].type === CHAT_NODE_TEXT_TYPE}
+                    onClick={() => changeTypes(selectedNodes, CHAT_NODE_TEXT_TYPE)}
+                    selected={selectedNodes.every((nd) => nd.type === CHAT_NODE_TEXT_TYPE)}
                     data-testid="text-type"
                   >
                     <FiMessageSquare />
                     <span>Text</span>
                   </TypeChooser>
                   <TypeChooser
-                    onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_ANSWER_TYPE)}
-                    selected={selectedNodes[0].type === CHAT_NODE_ANSWER_TYPE}
+                    onClick={() => changeTypes(selectedNodes, CHAT_NODE_ANSWER_TYPE)}
+                    selected={selectedNodes.every((nd) => nd.type === CHAT_NODE_ANSWER_TYPE)}
                     data-testid="answer-type"
                   >
                     <FiList />
                     <span>Answer</span>
                   </TypeChooser>
                   <TypeChooser
-                    onClick={() => changeType(selectedNodes[0].id!, CHAT_NODE_CONDITION_TYPE)}
-                    selected={selectedNodes[0].type === CHAT_NODE_CONDITION_TYPE}
+                    onClick={() => changeTypes(selectedNodes, CHAT_NODE_CONDITION_TYPE)}
+                    selected={selectedNodes.every((nd) => nd.type === CHAT_NODE_CONDITION_TYPE)}
                     data-testid="condition-type"
                   >
                     <FiHelpCircle />
                     <span>Condition</span>
                   </TypeChooser>
                 </TypeChooserWrapper>
-                {selectedNodes[0].type !== CHAT_NODE_CONDITION_TYPE && (
-                  <Textarea
-                    onChange={handleInputChange}
-                    name="message"
-                    value={selectedNodes[0].data.message}
-                  />
-                )}
+                {selectedNodes.length === 1 &&
+                  selectedNodes[0].type !== CHAT_NODE_CONDITION_TYPE && (
+                    <Textarea
+                      onChange={handleInputChange}
+                      name="message"
+                      value={selectedNodes[0].data.message}
+                    />
+                  )}
               </SidePanelContent>
               {/* <div>
             {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE && (
@@ -1005,7 +1013,7 @@ const Story = () => {
           onNodeDragStop={onNodeDragStop}
           onInit={setReactFlowInstance}
           onConnect={onConnect}
-          selectNodesOnDrag={false}
+          selectNodesOnDrag={true}
           multiSelectionKeyCode={multiselectKeys}
           minZoom={0.1}
           maxZoom={4}
@@ -1312,7 +1320,7 @@ const TypeChooser = styled.button<{ selected: boolean }>`
   padding: 8px;
   gap: 4px;
   cursor: pointer;
-  font-sizs: 14px;
+  font-size: 14px;
   font-weight: 600;
   ${({ selected }) =>
     !selected &&
@@ -1390,7 +1398,7 @@ const IdTag = styled.div`
   white-space: nowrap;
 `;
 
-const SidePanel = styled.div<{ color: string }>`
+const SidePanel = styled.div<{ tagColor?: string | false }>`
   width: 360px;
   background: ${({ theme }) => theme.colors.blurBg};
   padding: 25px;
@@ -1403,11 +1411,12 @@ const SidePanel = styled.div<{ color: string }>`
   gap: 16px;
   backdrop-filter: blur(35px) saturate(200%);
   ${ItemTitleBar}, ${IdTag} {
-    background: ${({ color }) => color};
-    color: ${({ color }) => (getLuminance(color) > 0.4 ? colors.light.font : colors.dark.font)};
+    background: ${({ tagColor }) => tagColor};
+    color: ${({ tagColor }) =>
+      getLuminance(tagColor || '#fff') > 0.4 ? colors.light.font : colors.dark.font};
   }
   ${IdTag}, ${TypeChooser} {
-    color: ${({ color }) => color};
+    color: ${({ tagColor }) => tagColor || '#fff'};
   }
   -webkit-user-drag: none;
   & * {
