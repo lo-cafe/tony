@@ -239,6 +239,9 @@ export default FScreenListing;
 
 const StyledFixedBtn = styled(FixedButton)`
   margin: 0 4px;
+  &:first-child {
+    margin-left: 0;
+  }
   &.item-enter {
     opacity: 0;
   }
