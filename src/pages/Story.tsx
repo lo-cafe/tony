@@ -765,7 +765,7 @@ const Story = () => {
     reactFlowInstance.setCenter(
       node.position.x + halfs[node.type as ChatNodeTypes].x,
       node.position.y + halfs[node.type as ChatNodeTypes].y,
-      { zoom: 1, duration: 300 }
+      { zoom: 1, duration: 500 }
     );
   };
 
