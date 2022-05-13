@@ -47,6 +47,10 @@ import {
   ChatNodeTypes,
 } from '~/types/data';
 
+import lightButton from '~/assets/lightButton.png';
+import darkButton from '~/assets/darkButton.png';
+import autoButton from '~/assets/autoButton.png';
+
 import Title from '~/components/Title';
 import discordIcon from '~/components/discord.svg';
 import Input from '~/components/Input';
@@ -178,6 +182,16 @@ const Story = () => {
     memoizee((nodeId: ID) => edges.filter((e) => e.source === nodeId || e.target === nodeId)),
     [nodes, edges]
   );
+
+  useEffect(() => {
+    const imagesPreload = [lightButton, darkButton, autoButton];
+    imagesPreload.forEach((image) => {
+      const newImage = new Image();
+      newImage.src = image;
+      // @ts-ignore: Unreachable code error
+      window[image] = newImage;
+    });
+  }, []);
 
   const selectedWorkspace = getSelectedWorkspace(data.current);
   const selectedChat = getSelectedChat(data.current);
