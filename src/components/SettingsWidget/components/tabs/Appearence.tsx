@@ -62,8 +62,7 @@ const Appearence = () => {
       <TitleWrapper>
         <Title>{mirrorColors ? 'Colors' : 'Light colors'}</Title>
         <UnifyWrapper>
-          UNIFY COLORS
-          <Toggle checked={mirrorColors} onChange={(e) => setMirrorColors(e.target.checked)} height={14} />
+          <Toggle label="UNIFY COLORS" checked={mirrorColors} onChange={(e) => setMirrorColors(e.target.checked)} height={14} />
         </UnifyWrapper>
       </TitleWrapper>
 

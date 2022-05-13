@@ -100,7 +100,11 @@ const FixedButton: FC<FixedButtonProps> = ({
       )}
       {icon}
       <form onSubmit={onInputEnter}>
-        {isEditing ? <PillInput name={data} value={value} onChange={onValueChange} /> : value}
+        {isEditing ? (
+          <PillInput autoComplete="false" name={data} value={value} onChange={onValueChange} />
+        ) : (
+          value
+        )}
       </form>
       {rightIcon}
       {onValueChange && (
@@ -153,6 +157,9 @@ const FixedButtonWrapper = styled.button<{
   withButtons?: boolean;
   disabled?: boolean;
 }>`
+  form {
+    white-space: nowrap;
+  }
   & svg * {
     stroke-width: 3px;
   }
@@ -189,7 +196,8 @@ const FixedButtonWrapper = styled.button<{
       ? `solid 2px ${theme.nodeColors.accent}`
       : `solid 1px ${theme.colors.blurBorderColor}`};
   backdrop-filter: blur(35px) saturate(200%);
-  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out, background ${({ theme }) => theme.transitions.normal}ms ease-out;
+  transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out,
+    background ${({ theme }) => theme.transitions.normal}ms ease-out;
   user-select: none;
   &:hover {
     box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.15);
@@ -232,7 +240,8 @@ const FixedButtonInnerButton = styled.button<{ red?: boolean; opened?: boolean }
   &:hover {
     background: rgba(0, 0, 0, 0.1);
   }
-  transition: background-color ${({ theme }) => theme.transitions.normal}ms ease-out, width ${({ theme }) => theme.transitions.quick}ms ease-out;
+  transition: background-color ${({ theme }) => theme.transitions.normal}ms ease-out,
+    width ${({ theme }) => theme.transitions.quick}ms ease-out;
   color: ${({ red }) => (red ? 'red' : 'inherit')};
   cursor: pointer;
 `;

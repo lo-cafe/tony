@@ -88,9 +88,10 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
             >
               <Tag>
                 <FiGitBranch />
-                {data.conditionsBundle?.filter((cond) => cond.nodes.includes(id)).length ||
-                  'No'}{' '}
-                conditions
+                <span>
+                  {data.conditionsBundle?.filter((cond) => cond.nodes.includes(id)).length || 'No'}{' '}
+                  conditions
+                </span>
               </Tag>
             </ContextMenuInjector>
           )}
@@ -131,6 +132,12 @@ const Tag = styled.div`
   padding: 3px 6px;
   border-radius: 8px;
   color: white;
+  min-width: 0;
+  span {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
   font-weight: 600;
   display: flex;
   justify-content: space-between;
