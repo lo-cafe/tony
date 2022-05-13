@@ -7,23 +7,35 @@ import { darken, lighten, getLuminance } from 'polished';
 import useUserStore from '~/instances/userStore';
 import { light, dark } from '~/constants/colors';
 import LaceString from '~/components/LaceString';
-import { ID } from '~/types/data';
+import { ID, ChatNode } from '~/types/data';
 
 interface ConditionNodeCardProps {
   fadeOut?: boolean;
-  isConnectionValid?: (source: ID, target: ID, sourceHandle: string | null, targetHandle: string | null) => boolean;
+  name?: string;
+  conditionsBundle?: ({ nodes: ID[] } & ChatNode)[];
+  isConnectionValid?: (
+    source: ID,
+    target: ID,
+    sourceHandle: string | null,
+    targetHandle: string | null
+  ) => boolean;
 }
 
 const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>> = memo(
   ({ id, data, selected, className }) => {
-    const { showNodeIds } = useUserStore((s) => s.preferences);
+    const { showNodeIds, showConditionsConnections } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
-      return data.isConnectionValid(connection.source, connection.target, connection.sourceHandle, connection.targetHandle);
+      return data.isConnectionValid(
+        connection.source,
+        connection.target,
+        connection.sourceHandle,
+        connection.targetHandle
+      );
     };
     return (
       <Item
-        // fadedOut={fadedOut}
+        fadeOut={data.fadeOut}
         // onClick={handleOnClick(() => onCardClick && onCardClick(item.id))}
         selected={selected}
         className={className}
@@ -37,18 +49,27 @@ const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>
         <ItemTitleBar>
           <ItemTitle data-testid="node-type">
             <ConditionHandle
+              hidden={!showConditionsConnections}
               isValidConnection={isValidConnection}
               type="source"
               position={Position.Left}
               id="condition"
             />
+            {!showConditionsConnections && data.conditionsBundle && (
+              <ConditionCounter>
+                {data.conditionsBundle?.find((cond) => cond.id === id)?.nodes.length || '0'}
+              </ConditionCounter>
+            )}
             <FiHelpCircle />
             Condition
           </ItemTitle>
-          <IdTag>
-            <Id>{id}</Id>
-          </IdTag>
+          {showNodeIds && (
+            <IdTag>
+              <Id>{id}</Id>
+            </IdTag>
+          )}
         </ItemTitleBar>
+        <Name>{data.name || 'Unamed condition'}</Name>
         <ResultsWrapper>
           <div>
             YES
@@ -78,6 +99,23 @@ const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>
 export default ConditionNodeCard;
 
 const LACE_SIZE = 25;
+
+const Name = styled.div`
+  font-size: 14px;
+  line-height: 14px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  &::before,
+  &::after {
+    content: '';
+    display: block;
+    height: 1px;
+    flex: 1;
+    background: gray;
+  }
+`;
 
 const ResultsWrapper = styled.div`
   display: flex;
@@ -125,7 +163,6 @@ const TargetHandle = styled(Handle)`
   background: ${({ theme }) => theme.colors.cardBg};
   border: none;
   border-radius: 50%;
-  border:
   font-size: 16px;
   height: ${LACE_SIZE / 2}px;
   width: ${LACE_SIZE}px;
@@ -172,9 +209,24 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
   }
 `;
 
-const ConditionHandle = styled(SourceHandle)`
+const ConditionCounter = styled.div`
   background: ${({ theme }) => (getLuminance(theme.colors.cardBg) > 0.4 ? '#424242' : '#f5f5f5')};
   border-color: ${({ theme }) => theme.colors.cardBg};
+  border-radius: 50%;
+  position: absolute;
+  left: -28px;
+  z-index: 1;
+  font-size: 12px;
+  text-align: center;
+  width: 15px;
+  height: 15px;
+  line-height: 15px;
+`;
+
+const ConditionHandle = styled(SourceHandle)<{ hidden: boolean }>`
+  background: ${({ theme }) => (getLuminance(theme.colors.cardBg) > 0.4 ? '#424242' : '#f5f5f5')};
+  border-color: ${({ theme }) => theme.colors.cardBg};
+  opacity: ${({ hidden }) => (hidden ? 0 : 1)};
   left: -27px;
   &:hover {
     transform: translateY(-50%) scale(1.2);
@@ -204,7 +256,7 @@ const ConditionHandle = styled(SourceHandle)`
 // `;
 
 interface ItemProps {
-  fadedOut?: boolean;
+  fadeOut?: boolean;
   selected?: boolean;
 }
 
@@ -234,7 +286,7 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
   background: ${({ theme }) => theme.colors.cardBg};
   border-radius: 16px;
   width: 220px;
-  height: 130px;
+  height: 144px;
   display: flex;
   margin: 0;
   gap: 8px;
@@ -243,7 +295,7 @@ const Item = styled.div<ItemProps & { condition?: boolean }>`
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
   transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out,
     opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
-  opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
+  opacity: ${({ fadeOut }) => (fadeOut ? 0.35 : 1)};
   animation: ${putInPlace} 1s ease-out;
   user-select: none;
   -webkit-user-drag: none;

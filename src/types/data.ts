@@ -16,7 +16,7 @@ export type ChatNodeTypes =
 export interface ChatNodeData {
   message: string;
   character: ID | null;
-  conditions?: ID[];
+  name?: string | null;
   isCopy?: boolean;
 }
 

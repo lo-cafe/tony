@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useRef } from 'react';
 
 import SelectableList from './SelectableList';
 import Popup from './Popup';
 
 interface ContextMenuInjectorProps {
-  options: any;
+  options?: any;
+  popupElement?: React.ReactElement;
 }
 
-const ContextMenuInjector: FC<ContextMenuInjectorProps> = ({ children, options }) => {
+const ContextMenuInjector: FC<ContextMenuInjectorProps> = ({ children, options, popupElement }) => {
   const [active, setActive] = useState(false);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const triggerRef = useRef(null);
   const popupRef = useRef(null);
 
@@ -33,7 +33,10 @@ const ContextMenuInjector: FC<ContextMenuInjectorProps> = ({ children, options }
         popupRef={popupRef}
         referenceElement={triggerRef.current}
       >
-        <SelectableList onOptionSelect={() => setActive(false)} options={options} />
+        {popupElement ||
+          (!!options && (
+            <SelectableList onOptionSelect={() => setActive(false)} options={options} />
+          ))}
       </Popup>
     </>
   );

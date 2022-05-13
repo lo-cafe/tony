@@ -16,6 +16,7 @@ interface NodeColorsThemes {
 
 interface Prefereces {
   showNodeIds: boolean;
+  showConditionsConnections: boolean;
 }
 
 interface UserStore {
@@ -50,7 +51,7 @@ const useUserStore = create<UserStore>(
   persist(
     {
       key: 'userStore',
-      allowlist: ['theme', 'nodeColors'],
+      allowlist: ['theme', 'nodeColors', 'preferences'],
     },
     (set) => ({
       email: '',
@@ -59,6 +60,7 @@ const useUserStore = create<UserStore>(
       nodeColors: { light: initialLight, dark: initialDark },
       preferences: {
         showNodeIds: true,
+        showConditionsConnections: false,
       },
       setEmail: (email) => set(() => ({ email })),
       setUid: (uid) => set(() => ({ uid })),

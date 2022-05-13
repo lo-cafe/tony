@@ -1,18 +1,22 @@
 import { useState, useEffect, memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
-import { FiMessageSquare, FiUser, FiList } from 'react-icons/fi';
+import { FiMessageSquare, FiUser, FiList, FiGitBranch } from 'react-icons/fi';
 import { Handle, Position, Node, Connection } from 'react-flow-renderer';
 import { darken, lighten, rgba, getLuminance } from 'polished';
+import { Edge } from 'react-flow-renderer';
 
 import useUserStore from '~/instances/userStore';
 import LaceString from '~/components/LaceString';
 import ContextMenuInjector from '~/components/ContextMenuInjector';
-import { ChatNodeData, ID, Character } from '~/types/data';
+import { ChatNodeData, ChatNode, ID, Character } from '~/types/data';
 import { CHAT_NODE_ANSWER_TYPE } from '~/constants/variables';
 import colors from '~/constants/colors';
 
 interface ChatNodeCardProps extends ChatNodeData {
   fadeOut?: boolean;
+  newEdge?: (data: { source: ID; sourceHandle: string; target: ID; targetHandle: string }) => void;
+  conditionsBundle?: ({ nodes: ID[] } & ChatNode)[];
+  availableConditions?: ChatNode[];
   setCharacter?: (itemId: ID, charId: ID) => void;
   characters?: Character[];
   isConnectionValid?: (
@@ -37,7 +41,7 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
     };
     return (
       <Item
-        // fadedOut={fadedOut}
+        fadeOut={data.fadeOut}
         cardType={type as 'answer' | 'text'}
         selected={selected}
         className={className}
@@ -65,6 +69,31 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
           <ItemBody>{data.message}</ItemBody>
         </ItemWrapper>
         <ItemBottomBar>
+          {type === CHAT_NODE_ANSWER_TYPE && (
+            <ContextMenuInjector
+              options={data.availableConditions?.map((cond) => ({
+                label: cond.data.name || 'Unamed condition',
+                icon: <FiGitBranch />,
+                selected: data.conditionsBundle?.find((c) => c.id === cond.id)?.nodes.includes(id),
+                type: 'item',
+                onClick: () =>
+                  data.newEdge &&
+                  data.newEdge({
+                    source: cond.id,
+                    sourceHandle: 'condition',
+                    target: id,
+                    targetHandle: 'target',
+                  }),
+              }))}
+            >
+              <Tag>
+                <FiGitBranch />
+                {data.conditionsBundle?.filter((cond) => cond.nodes.includes(id)).length ||
+                  'No'}{' '}
+                conditions
+              </Tag>
+            </ContextMenuInjector>
+          )}
           <ContextMenuInjector
             options={data.characters?.map((char) => ({
               label: char.name,
@@ -174,7 +203,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
 `;
 
 interface ItemProps {
-  fadedOut?: boolean;
+  fadeOut?: boolean;
   selected?: boolean;
 }
 
@@ -241,7 +270,7 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
   transition: box-shadow ${({ theme }) => theme.transitions.normal}ms ease-out,
     opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
-  opacity: ${({ fadedOut }) => (fadedOut ? 0.35 : 1)};
+  opacity: ${({ fadeOut }) => (fadeOut ? 0.35 : 1)};
   animation: ${({ cardType, theme }) =>
       cardType === 'answer'
         ? putInPlace(rgba(theme.nodeColors.answerNode, 0.5))

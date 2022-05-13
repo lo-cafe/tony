@@ -30,6 +30,7 @@ import ReactFlow, {
   useViewport,
   ReactFlowInstance,
   useUpdateNodeInternals,
+  useReactFlow,
 } from 'react-flow-renderer';
 import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
 import { lighten, getLuminance, darken } from 'polished';
@@ -48,9 +49,13 @@ import {
 
 import Title from '~/components/Title';
 import discordIcon from '~/components/discord.svg';
+import Input from '~/components/Input';
+import Textarea from '~/components/Textarea';
 import LoginWidget from '~/components/LoginWidget';
+import SelectableList from '~/components/SelectableList';
 import SettingsWidget from '~/components/SettingsWidget';
-import CustomEdge from '~/components/CustomEdge';
+import NormalEdge from '~/components/NormalEdge';
+import ConditionEdge from '~/components/ConditionEdge';
 import FixedButton from '~/components/FixedButton';
 import ChatNodeCard from '~/components/ChatNodeCard';
 import ConditionNodeCard from '~/components/ConditionNodeCard';
@@ -80,10 +85,13 @@ const db = getFirestore();
 type WorkspacesNames = Optional<Workspace, 'characters' | 'chats'>;
 type ChatNames = Optional<Chat, 'nodes' | 'edges'>;
 
-const nodeTypes = { text: ChatNodeCard, condition: ConditionNodeCard, answer: ChatNodeCard };
-const edgeTypes = { button: CustomEdge };
+const nodeTypes = {
+  [CHAT_NODE_TEXT_TYPE]: ChatNodeCard,
+  [CHAT_NODE_CONDITION_TYPE]: ConditionNodeCard,
+  [CHAT_NODE_ANSWER_TYPE]: ChatNodeCard,
+};
+const edgeTypes = { button: NormalEdge, normal: NormalEdge, condition: ConditionEdge };
 const multiselectKeys = ['Meta', 'Control'];
-const themes: ThemeTypes[] = ['light', 'dark', 'auto'];
 
 const _loadOrSave = (data?: DataStructure): DataStructure => {
   if (typeof window === 'undefined') return [];
@@ -98,8 +106,6 @@ const _loadOrSave = (data?: DataStructure): DataStructure => {
 const Story = () => {
   const theme = useTheme();
   const loggedUserId = useUserStore((s) => s.uid);
-  const setTheme = useUserStore((s) => s.setTheme);
-  const currentTheme = useUserStore((s) => s.theme);
 
   const loadOrSave = (newData?: DataStructure) => {
     if (newData) {
@@ -125,6 +131,8 @@ const Story = () => {
   const playModeAnswersIds = useRef<ID[]>([]);
   const newItemRef = useRef(null);
   const debounceCloudSave = useRef<any>(null);
+  const debounceConditionBundle = useRef<any>(null);
+  const prevCounditionBundle = useRef<any>(null);
 
   const [workspacesNames, _setWorkspacesNames] = useState<WorkspacesNames[]>(
     data.current.map(({ id, name }) => ({ id, name }))
@@ -146,6 +154,7 @@ const Story = () => {
       : null
   );
   const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
+  const [spotlight, setSpotlight] = useState<ID | null>(null);
 
   const [whatToPlay, setWhatToPlay] = useState<{ toShow: ChatNode; buttons: ChatNode[] } | null>(
     null
@@ -173,6 +182,34 @@ const Story = () => {
   const selectedWorkspace = getSelectedWorkspace(data.current);
   const selectedChat = getSelectedChat(data.current);
   const selectedNodes = useMemo(() => nodes && nodes.filter((x) => x.selected), [nodes]);
+  const conditionsBundle = useMemo<({ nodes: ID[] } & ChatNode)[]>(() => {
+    if (prevCounditionBundle.current && debounceConditionBundle.current) {
+      clearTimeout(debounceConditionBundle.current);
+      debounceConditionBundle.current = setTimeout(() => {
+        debounceConditionBundle.current = null;
+      }, 300);
+      return prevCounditionBundle.current;
+    }
+    return edges
+      .filter((edg) => edg.sourceHandle === CHAT_NODE_CONDITION_TYPE)
+      .reduce((prev, curr) => {
+        const newArr = [...prev];
+        const targetNode = nodes.find((nd) => nd.id === curr.target);
+        const foundCondition = nodes.find((nd) => nd.id === curr.source);
+        if (!targetNode || !foundCondition) return prev;
+        const foundGroup = newArr.find((gr) => gr.id === curr.source);
+
+        if (foundGroup) {
+          foundGroup.nodes.push(curr.target);
+        } else {
+          newArr.push({
+            ...foundCondition,
+            nodes: [targetNode.id],
+          });
+        }
+        return newArr;
+      }, [] as ({ nodes: ID[] } & ChatNode)[]);
+  }, [nodes, edges]);
 
   useEffect(() => {
     if (!loggedUserId) return;
@@ -247,7 +284,7 @@ const Story = () => {
   }, [selectedChatId, selectedWorkspaceId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { value } = e.target;
+    const { value, name } = e.target;
     setNodes(
       nodes.map((item) =>
         item.selected
@@ -255,7 +292,7 @@ const Story = () => {
               ...item,
               data: {
                 ...item.data,
-                message: value,
+                [name]: value,
               },
             }
           : item
@@ -277,8 +314,8 @@ const Story = () => {
       )
     );
     // if (type === CHAT_NODE_CONDITION_TYPE)
-    setEdges(
-      edges.filter((edg) => !targetIds.includes(edg.source) && !targetIds.includes(edg.source))
+    setEdges((old) =>
+      old.filter((edg) => !targetIds.includes(edg.source) && !targetIds.includes(edg.target))
     );
     targetIds.forEach((id) => updateNodeInternals(id));
   };
@@ -379,7 +416,6 @@ const Story = () => {
           type: nd.type,
           message: nd.data.message,
           character: nd.data.character,
-          conditions: nd.data.conditions,
           tonyData: {
             position: nd.position,
           },
@@ -491,6 +527,32 @@ const Story = () => {
   //   if (!target || target.type !== CHAT_NODE_TEXT_TYPE) return;
   //   setPlayNode(id);
   // };
+  const newEdge = ({
+    source,
+    sourceHandle,
+    target,
+    targetHandle,
+  }: {
+    source: ID;
+    sourceHandle: string;
+    target: ID;
+    targetHandle: string;
+  }) => {
+    const alreadyThere = edges.find((e) => e.source === source && e.target === target);
+    if (alreadyThere) return removeEdge(alreadyThere.id);
+    setEdges((old) => [
+      ...old,
+      {
+        id: nanoid(ID_SIZE),
+        source,
+        sourceHandle,
+        target,
+        targetHandle,
+        type: sourceHandle === 'condition' ? 'condition' : 'normal',
+        animated: sourceHandle !== 'condition',
+      },
+    ]);
+  };
 
   const onNodesChange = useCallback(
     (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
@@ -502,7 +564,16 @@ const Story = () => {
   );
   const onConnect = useCallback(
     (connection) =>
-      setEdges((eds) => addEdge({ ...connection, type: 'button', animated: true }, eds)),
+      setEdges((eds) =>
+        addEdge(
+          {
+            ...connection,
+            type: connection.sourceHandle === 'condition' ? 'condition' : 'normal',
+            animated: connection.sourceHandle !== 'condition',
+          },
+          eds
+        )
+      ),
     [setEdges]
   );
   const removeEdge = useCallback(
@@ -670,6 +741,32 @@ const Story = () => {
   const play = () => {
     if (!selectedNodes || selectedNodes.length !== 1) return;
     playFrom(selectedNodes[0]);
+  };
+
+  const focusOn = (id: ID, spotlight?: boolean) => {
+    if (!reactFlowInstance) return;
+    const node = nodes.find((x) => x.id === id);
+    if (!node) return;
+    const halfs = {
+      [CHAT_NODE_CONDITION_TYPE]: {
+        x: 110,
+        y: 72,
+      },
+      [CHAT_NODE_ANSWER_TYPE]: {
+        x: 124.5,
+        y: 87.5,
+      },
+      [CHAT_NODE_TEXT_TYPE]: {
+        x: 124.5,
+        y: 87.5,
+      },
+    };
+    setSpotlight(spotlight ? node.id : null);
+    reactFlowInstance.setCenter(
+      node.position.x + halfs[node.type as ChatNodeTypes].x,
+      node.position.y + halfs[node.type as ChatNodeTypes].y,
+      { zoom: 1, duration: 300 }
+    );
   };
 
   const resetZoom = () => {
@@ -886,7 +983,6 @@ const Story = () => {
             <SidePanel
               data-testid="side-panel"
               tagColor={
-                selectedNodes.length === 1 &&
                 theme.nodeColors[
                   COLORS[selectedNodes[0].type as ChatNodeTypes] as
                     | 'answerNode'
@@ -945,12 +1041,32 @@ const Story = () => {
                       value={selectedNodes[0].data.message}
                     />
                   )}
+                {selectedNodes.length === 1 && selectedNodes[0].type === CHAT_NODE_CONDITION_TYPE && (
+                  <>
+                    <Input
+                      onChange={handleInputChange}
+                      name="name"
+                      placeholder="Condition name"
+                      value={selectedNodes[0].data.name || ''}
+                    />
+                    <h4 style={{ margin: 0 }}>Conditions</h4>
+                    <SelectableList
+                      style={{ padding: 0, fontSize: 12 }}
+                      options={
+                        conditionsBundle
+                          .find((cond) => cond.id === selectedNodes[0].id)
+                          ?.nodes.map((ndId) => ({
+                            label: nodes.find((nd) => nd.id === ndId)!.data.message,
+                            icon: <FiList size={16} />,
+                            type: 'item',
+                            onMouseEnter: () => focusOn(ndId, true),
+                            onMouseLeave: () => focusOn(selectedNodes[0].id),
+                          })) || []
+                      }
+                    />
+                  </>
+                )}
               </SidePanelContent>
-              {/* <div>
-            {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE && (
-              <Button onClick={() => play(selectedChatNodeId!)}>Play</Button>
-            )}
-          </div> */}
             </SidePanel>
           )}
         </OTopRightUnder>
@@ -996,6 +1112,10 @@ const Story = () => {
               setCharacter,
               characters: characters,
               isConnectionValid,
+              newEdge,
+              fadeOut: typeof spotlight === 'string' && node.id !== spotlight,
+              conditionsBundle,
+              availableConditions: nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE),
             },
           }))}
           edges={edges.map((edge) => ({
@@ -1340,27 +1460,6 @@ const SidePanelContent = styled.div`
   flex-direction: column;
   gap: 16px;
   flex: 1;
-`;
-
-const Textarea = styled.textarea`
-  width: 100%;
-  border: none;
-  border-radius: 8px;
-  background: ${({ theme }) => theme.colors.inputBlurBg};
-  padding: 20px;
-  color: ${({ theme }) => theme.colors.font};
-  font-size: 14px;
-  outline: none;
-  font-family: inherit;
-  resize: vertical;
-  min-height: 200px;
-  transition: background 0.2s ease-out;
-  &:focus {
-    background: ${({ theme }) =>
-      getLuminance(theme.colors.bg) > 0.4
-        ? darken(0.5, theme.colors.inputBlurBg)
-        : lighten(0.1, theme.colors.inputBlurBg)};
-  }
 `;
 
 const ItemTitleBar = styled.div`

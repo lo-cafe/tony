@@ -18,6 +18,7 @@ import { initFirebase } from '~/instances/firebase';
 import useUserStore from '~/instances/userStore';
 
 import CloseArea from '~/components/CloseArea';
+import Input from '~/components/Input';
 import Button from '~/components/Button';
 import FixedButton from '~/components/FixedButton';
 import Card from '~/components/Card';
@@ -109,7 +110,7 @@ const LoginWidget = () => {
                       </button>
                     </TitlesWrapper>
                     {signUpInstead && (
-                      <StyledInput
+                      <Input
                         required
                         value={name}
                         name="name"
@@ -118,7 +119,7 @@ const LoginWidget = () => {
                         placeholder="Name"
                       />
                     )}
-                    <StyledInput
+                    <Input
                       required
                       value={email}
                       name="email"
@@ -126,7 +127,7 @@ const LoginWidget = () => {
                       type="email"
                       placeholder="Email"
                     />
-                    <StyledInput
+                    <Input
                       required
                       value={password}
                       name="password"
@@ -176,11 +177,13 @@ const LoaderWrapper = styled.div<{ active: boolean }>`
   height: calc(100% + 2px);
   justify-content: center;
   align-items: center;
-  backdrop-filter: blur(${({ active }) => (active ? 20 : 0)}px) saturate(${({ active }) => (active ? 200 : 0)}%);
+  backdrop-filter: blur(${({ active }) => (active ? 20 : 0)}px)
+    saturate(${({ active }) => (active ? 200 : 0)}%);
   background-color: ${({ theme }) => transparentize(0.3, theme.colors.blurBg)};
   opacity: ${({ active }) => (active ? 1 : 0)};
   pointer-events: ${({ active }) => (active ? 'auto' : 'none')};
-  transition: opacity ${({ theme }) => theme.transitions.normal}ms ease-out, backdrop-filter ${({ theme }) => theme.transitions.normal}ms ease-out;
+  transition: opacity ${({ theme }) => theme.transitions.normal}ms ease-out,
+    backdrop-filter ${({ theme }) => theme.transitions.normal}ms ease-out;
 `;
 
 const TitlesWrapper = styled.div<{ signUpInstead: boolean }>`
@@ -241,28 +244,4 @@ const StyledCard = styled(Card)<{ state: string; loading: boolean }>`
   transition: opacity
       ${({ state }) => (state === 'entering' || state === 'entered' ? '0.05s' : '0.2s')} ease-out,
     filter 0.2s ease, transform 0.2s ease;
-`;
-
-const StyledInput = styled.input`
-  display: block;
-  height: 40px;
-  line-height: 40px;
-  border-radius: 8px;
-  background: ${({ theme }) => theme.colors.inputBg};
-  color: inherit;
-  padding: 0 16px;
-  margin-bottom: 16px;
-  border: none;
-  width: 100%;
-  font-family: inherit;
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, background 0.2s ease-out;
-  box-shadow: 0px 0px 0px rgba(0, 0, 0, 0);
-  &:focus {
-    font-weight: 700;
-    color: ${({ theme }) => theme.nodeColors.accent};
-    outline: none;
-    transform: translateY(-1px);
-    box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
-    background: ${({ theme }) => lighten(0.1, theme.colors.inputBg)};
-  }
 `;

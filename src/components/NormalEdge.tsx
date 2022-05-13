@@ -4,7 +4,7 @@ import { EdgeProps } from 'react-flow-renderer';
 
 const foreignObjectSize = 40;
 
-const CustomEdge: FC<EdgeProps> = ({
+const NormalEdge: FC<EdgeProps> = ({
   id,
   sourceX,
   sourceY,
@@ -70,7 +70,7 @@ const CustomEdge: FC<EdgeProps> = ({
   );
 };
 
-export default CustomEdge;
+export default NormalEdge;
 
 const VisibleEdge = styled.path``;
 
@@ -104,15 +104,15 @@ const EdgeButton = styled.button`
   }
 `;
 
-const EdgeButtonForeignobject = styled.foreignObject`
-  body {
-    background: transparent;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 40px;
-    &
-  }
-`;
+// const EdgeButtonForeignobject = styled.foreignObject`
+//   body {
+//     background: transparent;
+//     width: 40px;
+//     height: 40px;
+//     display: flex;
+//     justify-content: center;
+//     align-items: center;
+//     min-height: 40px;
+//     &
+//   }
+// `;

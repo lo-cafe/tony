@@ -6,7 +6,7 @@ import Title from '~/components/Title';
 import Toggle from '~/components/Toggle';
 
 const Appearence = () => {
-  const { showNodeIds } = useUserStore((s) => s.preferences);
+  const { showNodeIds, showConditionsConnections } = useUserStore((s) => s.preferences);
   const setPreferences = useUserStore((s) => s.setPreferences);
 
   return (
@@ -18,6 +18,13 @@ const Appearence = () => {
           <Toggle
             checked={showNodeIds}
             onChange={(e) => setPreferences({ showNodeIds: e.target.checked })}
+          />
+        </li>
+        <li>
+          Show conditions connections
+          <Toggle
+            checked={showConditionsConnections}
+            onChange={(e) => setPreferences({ showConditionsConnections: e.target.checked })}
           />
         </li>
       </List>

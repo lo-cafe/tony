@@ -11,13 +11,15 @@ interface Option {
   color?: string;
   icon?: React.ReactNode;
   type: OptionTypes;
+  selected?: boolean;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }
 
 interface SelectableListProps {
   options: Option[];
-  onOptionSelect: () => void;
+  onOptionSelect?: () => void;
+  style?: any;
 }
 
 const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...rest }) => {
@@ -37,6 +39,7 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
       header: () => <span>{option}</span>,
       item: () => (
         <OptionButton
+          selected={option.selected}
           color={option.color}
           onMouseEnter={option.onMouseEnter}
           onMouseLeave={option.onMouseLeave}
@@ -69,22 +72,22 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
 
 export default SelectableList;
 
-const OptionButton = styled.button`
+const OptionButton = styled.button<{ selected?: boolean }>`
   display: block;
   width: 100%;
-  background-color: transparent;
   font-family: inherit;
+  background: transparent;
   border: none;
   display: block;
   width: 100%;
   padding: 0;
   & > * {
+    background-color: ${({ selected }) => (selected ? 'rgba(125,125,125,0.15)' : 'transparent')};
     display: flex;
     gap: 8px;
     align-items: center;
     width: 100%;
     text-align: left;
-    background-color: transparent;
     border: none;
     padding: 8px 12px;
     color: ${({ color, theme }) => color || theme.colors.font};
