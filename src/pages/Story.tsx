@@ -4,6 +4,7 @@ import memoizee from 'memoizee';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash/cloneDeep';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
+import { useDebounce } from 'usehooks-ts'
 import {
   FiMessageSquare,
   FiList,
@@ -81,6 +82,7 @@ import {
 } from '~/constants/initialData';
 import { initFirebase } from '~/instances/firebase';
 import colors from '~/constants/colors';
+import useTimeTravel from '~/hooks/useTimeTravel';
 
 initFirebase();
 
@@ -126,10 +128,17 @@ const Story = () => {
   };
 
   const altPressed = useKeyPress('AltLeft');
+  const undoPressed = useKeyPress('Meta+z');
+  const redoPressed = useKeyPress('Meta+Shift+z');
   const updateNodeInternals = useUpdateNodeInternals();
 
   const loadedData = useRef(loadOrSave());
-  const data = useRef<DataStructure>(loadedData.current!);
+  const {
+    present: data,
+    undo,
+    redo,
+    setState: setData,
+  } = useTimeTravel<DataStructure>(loadedData.current!);
   const reactFlowWrapper = useRef(null);
   const lastCopied = useRef<null | Node>(null);
   const playModeAnswersIds = useRef<ID[]>([]);
@@ -141,12 +150,17 @@ const Story = () => {
   const [workspacesNames, _setWorkspacesNames] = useState<WorkspacesNames[]>(
     data.current.map(({ id, name }) => ({ id, name }))
   );
+  const debouncedWorkspacesNames = useDebounce(workspacesNames, 500);
   const [characters, setCharacters] = useState<Character[]>(data.current[0]?.characters);
+  const debouncedCharacters = useDebounce(characters, 500);
   const [chatsNames, _setChatsNames] = useState<ChatNames[]>(
     data.current[0]?.chats.map(({ id, name }) => ({ id, name }))
   );
+  const debouncedChatsNames = useDebounce(chatsNames, 500);
   const [nodes, setNodes] = useState<ChatNode[]>(data.current[0]?.chats[0]?.nodes);
+  const debouncedNodes = useDebounce(nodes, 500);
   const [edges, setEdges] = useState<Edge[]>(data.current[0]?.chats[0]?.edges);
+  const debouncedEdges = useDebounce(edges, 500);
   const { zoom } = useViewport();
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(
@@ -182,6 +196,21 @@ const Story = () => {
     memoizee((nodeId: ID) => edges.filter((e) => e.source === nodeId || e.target === nodeId)),
     [nodes, edges]
   );
+
+  useEffect(() => {
+    console.log(undoPressed);
+    if (undoPressed) {
+      undo();
+      updateMirrors();
+    }
+  }, [undoPressed]);
+
+  useEffect(() => {
+    if (redoPressed) {
+      redo();
+      updateMirrors();
+    }
+  }, [redoPressed]);
 
   useEffect(() => {
     const imagesPreload = [lightButton, darkButton, autoButton];
@@ -236,7 +265,7 @@ const Story = () => {
           .data()!
           .data.filter((x: Workspace) => !data.current.find((el) => x.id === el.id)),
       ];
-      data.current = mergedDatas;
+      setData(mergedDatas);
       updateMirrors();
       loadOrSave(data.current);
     };
@@ -247,19 +276,19 @@ const Story = () => {
     if (!selectedChatId || !getSelectedChat(data.current)) return;
     getSelectedChat(data.current)!.nodes = nodes;
     loadOrSave(data.current);
-  }, [nodes]);
+  }, [debouncedNodes]);
 
   useEffect(() => {
     if (!selectedChatId || !getSelectedChat(data.current)) return;
     getSelectedChat(data.current)!.edges = edges;
     loadOrSave(data.current);
-  }, [edges]);
+  }, [debouncedEdges]);
 
   useEffect(() => {
     if (!selectedChatId || !getSelectedWorkspace(data.current)) return;
     getSelectedWorkspace(data.current)!.characters = characters;
     loadOrSave(data.current);
-  }, [characters]);
+  }, [debouncedCharacters]);
 
   useEffect(() => {
     if (!selectedWorkspaceId) return;
@@ -271,19 +300,21 @@ const Story = () => {
         : { ...initialChatData(), ...c }
     ) as Chat[];
     loadOrSave(data.current);
-  }, [chatsNames]);
+  }, [debouncedChatsNames]);
 
   useEffect(() => {
-    data.current = workspacesNames.map((w) =>
-      data.current.find(({ id }) => id === w.id)
-        ? {
-            ...data.current.find(({ id }) => id === w.id),
-            ...w,
-          }
-        : { ...initialWorkspaceData(), ...w }
-    ) as DataStructure;
+    setData(
+      workspacesNames.map((w) =>
+        data.current.find(({ id }) => id === w.id)
+          ? {
+              ...data.current.find(({ id }) => id === w.id),
+              ...w,
+            }
+          : { ...initialWorkspaceData(), ...w }
+      ) as DataStructure
+    );
     loadOrSave(data.current);
-  }, [workspacesNames]);
+  }, [debouncedWorkspacesNames]);
 
   const updateMirrors = () => {
     setWorkspacesNames(() => data.current || []);
@@ -525,7 +556,7 @@ const Story = () => {
           ...old,
           { id: transformedData.id, name: transformedData.name },
         ]);
-        data.current = [...data.current, transformedData];
+        setData([...data.current, transformedData]);
         ref.current!.value = '';
       } catch (error) {
         console.log(error);
