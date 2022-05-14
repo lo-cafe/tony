@@ -4,7 +4,6 @@ import memoizee from 'memoizee';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash/cloneDeep';
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
-import { useDebounce } from 'usehooks-ts'
 import {
   FiMessageSquare,
   FiList,
@@ -83,6 +82,7 @@ import {
 import { initFirebase } from '~/instances/firebase';
 import colors from '~/constants/colors';
 import useTimeTravel from '~/hooks/useTimeTravel';
+import useDebounceFunc from '~/hooks/useDebounceFunc';
 
 initFirebase();
 
@@ -128,8 +128,7 @@ const Story = () => {
   };
 
   const altPressed = useKeyPress('AltLeft');
-  const undoPressed = useKeyPress('Meta+z');
-  const redoPressed = useKeyPress('Meta+Shift+z');
+  const spacePressed = useKeyPress('Space');
   const updateNodeInternals = useUpdateNodeInternals();
 
   const loadedData = useRef(loadOrSave());
@@ -137,7 +136,8 @@ const Story = () => {
     present: data,
     undo,
     redo,
-    setState: setData,
+    snapshot,
+    reset,
   } = useTimeTravel<DataStructure>(loadedData.current!);
   const reactFlowWrapper = useRef(null);
   const lastCopied = useRef<null | Node>(null);
@@ -150,17 +150,12 @@ const Story = () => {
   const [workspacesNames, _setWorkspacesNames] = useState<WorkspacesNames[]>(
     data.current.map(({ id, name }) => ({ id, name }))
   );
-  const debouncedWorkspacesNames = useDebounce(workspacesNames, 500);
   const [characters, setCharacters] = useState<Character[]>(data.current[0]?.characters);
-  const debouncedCharacters = useDebounce(characters, 500);
   const [chatsNames, _setChatsNames] = useState<ChatNames[]>(
     data.current[0]?.chats.map(({ id, name }) => ({ id, name }))
   );
-  const debouncedChatsNames = useDebounce(chatsNames, 500);
   const [nodes, setNodes] = useState<ChatNode[]>(data.current[0]?.chats[0]?.nodes);
-  const debouncedNodes = useDebounce(nodes, 500);
   const [edges, setEdges] = useState<Edge[]>(data.current[0]?.chats[0]?.edges);
-  const debouncedEdges = useDebounce(edges, 500);
   const { zoom } = useViewport();
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(
@@ -173,6 +168,7 @@ const Story = () => {
   );
   const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
   const [spotlight, setSpotlight] = useState<ID | null>(null);
+  const [scheduleSnapshop, setScheduleSnapshot] = useState(false);
 
   const [whatToPlay, setWhatToPlay] = useState<{ toShow: ChatNode; buttons: ChatNode[] } | null>(
     null
@@ -197,20 +193,28 @@ const Story = () => {
     [nodes, edges]
   );
 
-  useEffect(() => {
-    console.log(undoPressed);
-    if (undoPressed) {
-      undo();
-      updateMirrors();
-    }
-  }, [undoPressed]);
+  const callUndo = () => {
+    undo();
+    updateMirrors();
+    loadOrSave(data.current);
+  };
 
-  useEffect(() => {
-    if (redoPressed) {
-      redo();
-      updateMirrors();
+  const callRedo = () => {
+    redo();
+    updateMirrors();
+    loadOrSave(data.current);
+  };
+
+  const bindUndoRedo = useCallback((event) => {
+    if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA' ) return;
+    if ((event.metaKey || event.ctrlKey) && event.key === 'z') {
+      if (event.shiftKey) {
+        callRedo();
+        return;
+      }
+      callUndo();
     }
-  }, [redoPressed]);
+  }, []);
 
   useEffect(() => {
     const imagesPreload = [lightButton, darkButton, autoButton];
@@ -220,6 +224,10 @@ const Story = () => {
       // @ts-ignore: Unreachable code error
       window[image] = newImage;
     });
+    document.addEventListener('keydown', bindUndoRedo);
+    return () => {
+      document.removeEventListener('keydown', bindUndoRedo);
+    };
   }, []);
 
   const selectedWorkspace = getSelectedWorkspace(data.current);
@@ -265,56 +273,69 @@ const Story = () => {
           .data()!
           .data.filter((x: Workspace) => !data.current.find((el) => x.id === el.id)),
       ];
-      setData(mergedDatas);
+      data.current = mergedDatas;
+      reset();
       updateMirrors();
       loadOrSave(data.current);
     };
     fetchData();
   }, [loggedUserId]);
 
-  useEffect(() => {
+  const updateNodesInData = () => {
     if (!selectedChatId || !getSelectedChat(data.current)) return;
-    getSelectedChat(data.current)!.nodes = nodes;
+    const dataCopy = cloneDeep(data.current);
+    getSelectedChat(dataCopy)!.nodes = nodes;
+    data.current = dataCopy;
     loadOrSave(data.current);
-  }, [debouncedNodes]);
+  };
 
-  useEffect(() => {
+  const updateEdgesInData = () => {
     if (!selectedChatId || !getSelectedChat(data.current)) return;
-    getSelectedChat(data.current)!.edges = edges;
+    const dataCopy = cloneDeep(data.current);
+    getSelectedChat(dataCopy)!.edges = edges;
+    data.current = dataCopy;
     loadOrSave(data.current);
-  }, [debouncedEdges]);
+  };
 
-  useEffect(() => {
+  const updateCharactersInData = () => {
     if (!selectedChatId || !getSelectedWorkspace(data.current)) return;
-    getSelectedWorkspace(data.current)!.characters = characters;
+    const dataCopy = cloneDeep(data.current);
+    getSelectedWorkspace(dataCopy)!.characters = characters;
+    data.current = dataCopy;
     loadOrSave(data.current);
-  }, [debouncedCharacters]);
+  };
 
-  useEffect(() => {
+  const updateChatsNamesInData = () => {
     if (!selectedWorkspaceId) return;
     const selectedWorkspaceChats = getSelectedWorkspace(data.current)?.chats;
     if (!selectedWorkspaceChats) return;
-    getSelectedWorkspace(data.current)!.chats = chatsNames.map((c) =>
+    const dataCopy = cloneDeep(data.current);
+    getSelectedWorkspace(dataCopy)!.chats = chatsNames.map((c) =>
       selectedWorkspaceChats.find(({ id }) => id === c.id)
         ? { ...selectedWorkspaceChats.find(({ id }) => id === c.id), ...c }
         : { ...initialChatData(), ...c }
     ) as Chat[];
+    data.current = dataCopy;
     loadOrSave(data.current);
-  }, [debouncedChatsNames]);
+  };
 
-  useEffect(() => {
-    setData(
-      workspacesNames.map((w) =>
-        data.current.find(({ id }) => id === w.id)
-          ? {
-              ...data.current.find(({ id }) => id === w.id),
-              ...w,
-            }
-          : { ...initialWorkspaceData(), ...w }
-      ) as DataStructure
-    );
+  const updateWorkspacesNamesInData = () => {
+    data.current = workspacesNames.map((w) =>
+      data.current.find(({ id }) => id === w.id)
+        ? {
+            ...data.current.find(({ id }) => id === w.id),
+            ...w,
+          }
+        : { ...initialWorkspaceData(), ...w }
+    ) as DataStructure;
     loadOrSave(data.current);
-  }, [debouncedWorkspacesNames]);
+  };
+
+  useEffect(updateNodesInData, [nodes]);
+  useEffect(updateEdgesInData, [edges]);
+  useEffect(updateCharactersInData, [characters]);
+  useEffect(updateChatsNamesInData, [chatsNames]);
+  useEffect(updateWorkspacesNamesInData, [workspacesNames]);
 
   const updateMirrors = () => {
     setWorkspacesNames(() => data.current || []);
@@ -328,8 +349,13 @@ const Story = () => {
     updateMirrors();
   }, [selectedChatId, selectedWorkspaceId]);
 
+  const saveInputChange = useDebounceFunc(() => {
+    snapshot();
+  }, 250);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { value, name } = e.target;
+    saveInputChange();
     setNodes(
       nodes.map((item) =>
         item.selected
@@ -348,6 +374,7 @@ const Story = () => {
   const changeTypes = (targetNds: ChatNode[], type: ChatNodeTypes) => {
     if (!targetNds.length) return;
     const targetIds = targetNds.map((nd) => nd.id);
+    snapshot();
     setNodes(
       nodes.map((item) =>
         targetIds.includes(item.id)
@@ -368,11 +395,13 @@ const Story = () => {
   const deleteChat = (targetId: ID) => {
     if (!selectedWorkspace || !targetId) return;
     if (targetId === selectedChatId) setSelectedChatId(null);
+    snapshot();
     _setChatsNames((old) => old.filter(({ id }) => id !== targetId));
   };
 
   const deleteWorkspace = (targetId: ID) => {
     if (!targetId) return;
+    snapshot();
     if (targetId === selectedWorkspaceId) {
       setSelectedChatId(null);
       setSelectedWorkspaceId(null);
@@ -382,6 +411,7 @@ const Story = () => {
 
   const deleteChar = (targetId: ID) => {
     if (!selectedWorkspace) return;
+    snapshot();
     setCharacters((old) => old.filter((char) => char.id !== targetId));
     setNodes((old) =>
       old.map((node) => ({
@@ -395,35 +425,42 @@ const Story = () => {
   };
 
   const addChar = () => {
+    snapshot();
     setCharacters((old) => [...old, initialCharacterData()]);
   };
 
   const addChat = () => {
     if (!selectedWorkspace) return;
+    snapshot();
     const newChat = initialChatData();
     setChatsNames((old) => [...old, newChat]);
     setSelectedChatId(newChat.id);
   };
 
   const addWorkspace = () => {
+    snapshot();
     const newWorkspace = initialWorkspaceData();
     setWorkspacesNames((old) => [...old, newWorkspace]);
     setSelectedWorkspaceId(newWorkspace.id);
+    setScheduleSnapshot(true);
   };
 
   const changeWorkspaceName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    saveInputChange();
     _setWorkspacesNames((old) =>
       old.map((w) => (w.id === e.target.name ? { ...w, name: e.target.value } : w))
     );
   };
 
   const changeChatName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    saveInputChange();
     _setChatsNames((old) =>
       old.map((c) => (c.id === e.target.name ? { ...c, name: e.target.value } : c))
     );
   };
 
   const changeCharName = (e: React.ChangeEvent<HTMLInputElement>) => {
+    saveInputChange();
     setCharacters((old) =>
       old.map(({ id, name }) =>
         id === e.target.name ? { id, name: e.target.value } : { id, name }
@@ -432,6 +469,7 @@ const Story = () => {
   };
 
   const setCharacter = (targetId: ID, characterId: ID) => {
+    snapshot();
     const previousCharacter = nodes.find((node) => node.id === targetId)?.data.character;
     setNodes((old) =>
       old.map((node) => {
@@ -552,11 +590,12 @@ const Story = () => {
             })
           ),
         };
+        snapshot();
         setWorkspacesNames((old) => [
           ...old,
           { id: transformedData.id, name: transformedData.name },
         ]);
-        setData([...data.current, transformedData]);
+        data.current = [...data.current, transformedData];
         ref.current!.value = '';
       } catch (error) {
         console.log(error);
@@ -583,6 +622,7 @@ const Story = () => {
     target: ID;
     targetHandle: string;
   }) => {
+    snapshot();
     const alreadyThere = edges.find((e) => e.source === source && e.target === target);
     if (alreadyThere) return removeEdge(alreadyThere.id);
     setEdges((old) => [
@@ -600,15 +640,21 @@ const Story = () => {
   };
 
   const onNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    (changes) => {
+      setNodes((nds) => applyNodeChanges(changes, nds));
+    },
     [setNodes]
   );
   const onEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    (changes) => {
+      snapshot();
+      setEdges((eds) => applyEdgeChanges(changes, eds));
+    },
     [setEdges]
   );
   const onConnect = useCallback(
-    (connection) =>
+    (connection) => {
+      snapshot();
       setEdges((eds) =>
         addEdge(
           {
@@ -618,7 +664,8 @@ const Story = () => {
           },
           eds
         )
-      ),
+      );
+    },
     [setEdges]
   );
   const removeEdge = useCallback(
@@ -626,11 +673,15 @@ const Story = () => {
     [setEdges]
   );
   const onEdgeUpdate = useCallback(
-    (oldEdge, newConnection) => setEdges((els) => updateEdge(oldEdge, newConnection, els)),
+    (oldEdge, newConnection) => {
+      snapshot();
+      setEdges((els) => updateEdge(oldEdge, newConnection, els));
+    },
     [setEdges]
   );
   const onNodeDragStart = useCallback(
     (e: React.MouseEvent, rawNode: ChatNode) => {
+      snapshot();
       if (!altPressed) return true;
       const node = nodes.find((nd) => nd.id === rawNode.id)!;
       lastCopied.current = node;
@@ -703,6 +754,7 @@ const Story = () => {
   }, [altPressed]);
 
   const onStartDragToAddNewNode = () => {
+    snapshot();
     setTimeout(() => {
       setIsAddingNewNode(true);
     }, 150);
@@ -925,6 +977,12 @@ const Story = () => {
     ),
     [nodes, getRelatedEdges]
   );
+
+  useEffect(() => {
+    if (!scheduleSnapshop) return;
+    snapshot();
+    setScheduleSnapshot(false);
+  }, [scheduleSnapshop]);
 
   return (
     <>
@@ -1182,6 +1240,7 @@ const Story = () => {
           multiSelectionKeyCode={multiselectKeys}
           minZoom={0.1}
           maxZoom={4}
+          panOnDrag={spacePressed}
         >
           <StyledMiniMap
             maskColor={

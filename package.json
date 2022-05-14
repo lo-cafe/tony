@@ -36,7 +36,6 @@
     "styled-components": "^5.3.3",
     "use-debouncy": "^4.3.0",
     "use-resize-observer": "^8.0.0",
-    "usehooks-ts": "^2.5.2",
     "zustand": "^3.7.1",
     "zustand-persist": "^0.4.0"
   },

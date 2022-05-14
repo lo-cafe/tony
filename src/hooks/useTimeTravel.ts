@@ -2,55 +2,59 @@ import { useRef } from 'react';
 import cloneDeep from 'lodash/cloneDeep';
 
 const useTimeTravel: <T = void>(
-  initialState: T,
-  callback?: () => void
+  initialState: T
 ) => {
   present: React.MutableRefObject<T>;
-  setState: (newState: T, callCallback?: boolean) => void;
-  undo: () => void;
-  redo: () => void;
   past: React.MutableRefObject<T[]>;
   future: React.MutableRefObject<T[]>;
-} = (initialState, callback) => {
+  snapshot: () => void;
+  undo: () => void;
+  redo: () => void;
+  reset: () => void;
+} = (initialState) => {
   const past = useRef<typeof initialState[]>([]);
   const present = useRef(initialState);
   const future = useRef<typeof initialState[]>([]);
 
   const undo = () => {
-    console.log(past)
     if (!past.current.length) return;
     const copyFuture = cloneDeep(future.current);
-    copyFuture.unshift(present.current);
+    const copyPresent = cloneDeep(present.current);
+    copyFuture.unshift(copyPresent);
     future.current = copyFuture;
     present.current = past.current[0];
     const copyPast = cloneDeep(past.current);
     copyPast.shift();
     past.current = copyPast;
-    if (callback && typeof callback === 'function') callback();
   };
 
   const redo = () => {
     if (!future.current.length) return;
     const copyPast = cloneDeep(past.current);
-    copyPast.unshift(present.current);
+    const copyPresent = cloneDeep(present.current);
+    copyPast.unshift(copyPresent);
     past.current = copyPast;
     present.current = future.current[0];
     const copyFuture = cloneDeep(future.current);
     copyFuture.shift();
     future.current = copyFuture;
-    if (callback && typeof callback === 'function') callback();
   };
 
-  const setState = (state: typeof initialState, callCallback?: boolean) => {
+  const snapshot = () => {
     const copyPast = cloneDeep(past.current);
-    copyPast.unshift(present.current);
+    const copyPresent = cloneDeep(present.current);
+    copyPast.unshift(copyPresent);
+    if (copyPast.length > 100) copyPast.pop();
     past.current = copyPast;
-    present.current = state;
     future.current = [];
-    if (callCallback && callback && typeof callback === 'function') callback();
   };
 
-  return { present, setState, undo, redo, past, future };
+  const reset = () => {
+    past.current = [];
+    future.current = [];
+  };
+
+  return { present, past, future, undo, redo, snapshot, reset };
 };
 
 export default useTimeTravel;
