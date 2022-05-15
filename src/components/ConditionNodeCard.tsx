@@ -49,6 +49,7 @@ const ConditionNodeCard: FC<NodeProps<ConditionNodeCardProps> & { className?: st
         <ItemTitleBar>
           <ItemTitle data-testid="node-type">
             <ConditionHandle
+              isConnectable={showConditionsConnections}
               hidden={!showConditionsConnections}
               isValidConnection={isValidConnection}
               type="source"
@@ -228,6 +229,7 @@ const ConditionHandle = styled(SourceHandle)<{ hidden: boolean }>`
   background: ${({ theme }) => (getLuminance(theme.colors.cardBg) > 0.4 ? '#424242' : '#f5f5f5')};
   border-color: ${({ theme }) => theme.colors.cardBg};
   opacity: ${({ hidden }) => (hidden ? 0 : 1)};
+  pointer-events: ${({ hidden }) => (hidden ? 'none' : 'all')} !important;
   left: -27px;
   &:hover {
     transform: translateY(-50%) scale(1.2);
