@@ -1507,7 +1507,7 @@ const PlayModeWrapper = styled.div`
   width: 100%;
   height: 100%;
   z-index: 20;
-  background-color: ${({theme}) => theme.colors.cardBg};
+  background-color: ${({theme}) => theme.colors.blurBg};
   backdrop-filter: blur(35px) saturate(200%);
   display: flex;
   align-items: center;
