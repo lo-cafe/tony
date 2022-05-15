@@ -211,6 +211,7 @@ const SourceHandle = styled(Handle)<{ target?: boolean; type: string }>`
 
 const ConditionCounter = styled.div`
   background: ${({ theme }) => (getLuminance(theme.colors.cardBg) > 0.4 ? '#424242' : '#f5f5f5')};
+  color: ${({ theme }) => (getLuminance(theme.colors.cardBg) > 0.4 ? '#f5f5f5' : '#424242')};
   border-color: ${({ theme }) => theme.colors.cardBg};
   border-radius: 50%;
   position: absolute;
