@@ -3,10 +3,10 @@ import { getLuminance } from 'polished';
 
 import colors from '~/constants/colors';
 
-type OptionTypes = 'divider' | 'item' | 'header';
+type OptionTypes = 'divider' | 'item';
 
 interface Option {
-  label?: string | React.ReactElement;
+  label?: string;
   onClick?: () => void;
   color?: string;
   icon?: React.ReactNode;
@@ -33,10 +33,10 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
     const options: {
       divider: () => React.ReactElement;
       item: () => React.ReactElement;
-      header: () => React.ReactElement;
+      // header: () => React.ReactElement;
     } = {
       divider: () => <hr />,
-      header: () => <span>{option}</span>,
+      // header: () => <span>{option}</span>,
       item: () => (
         <OptionButton
           selected={option.selected}
@@ -46,14 +46,10 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
           onClick={onClickProxy(option.onClick!)}
           type="button"
         >
-          {typeof option.label === 'object' ? (
-            option
-          ) : (
-            <span>
-              {option.icon}
-              {option.label}
-            </span>
-          )}
+          <span>
+            {option.icon}
+            {option.label}
+          </span>
         </OptionButton>
       ),
     };

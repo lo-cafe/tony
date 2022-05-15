@@ -1,7 +1,7 @@
 import { useState, useEffect, memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FiMessageSquare, FiUser, FiList, FiGitBranch } from 'react-icons/fi';
-import { Handle, Position, NodeProps, Connection } from 'react-flow-renderer';
+import { Handle, Position, NodeProps, Connection } from '@kinark/react-flow-renderer';
 import { darken, lighten, rgba, getLuminance } from 'polished';
 
 import useUserStore from '~/instances/userStore';
@@ -25,6 +25,8 @@ interface ChatNodeCardProps extends ChatNodeData {
     targetHandle: string | null
   ) => boolean;
 }
+
+export type ChatNodeCardType = FC<NodeProps<ChatNodeCardProps>>
 
 const ChatNodeCard: FC<NodeProps<ChatNodeCardProps> & { testId?: string, className?: string; }> = memo(
   ({ type, id, data, selected, className, isConnectable, testId }) => {

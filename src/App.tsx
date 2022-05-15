@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 // import { BrowserRouter, Routes, Navigate, Route } from 'react-router-dom';
 import { createGlobalStyle, ThemeProvider } from 'styled-components';
-import { ReactFlowProvider } from 'react-flow-renderer';
+import { ReactFlowProvider } from '@kinark/react-flow-renderer';
 import { getAuth } from 'firebase/auth';
 
 import theme from '~/constants/theme';
@@ -65,8 +65,4 @@ const GlobalStyles = createGlobalStyle`
   .react-flow__attribution {
     display: none !important;
   }
-  /* .really-unselectable {
-    pointer-events: none !important;
-  } */
 `;
-//

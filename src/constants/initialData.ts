@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { Edge } from 'react-flow-renderer';
+import { Edge } from '@kinark/react-flow-renderer';
 import randomWords from 'random-words';
 
 import capitalize from '~/utils/capitalize'

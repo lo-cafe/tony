@@ -5,6 +5,7 @@ import useResizeObserver from 'use-resize-observer';
 
 interface AutoWidthProps {
   state: 'unmounted' | 'entering' | 'entered' | 'exiting' | 'exited';
+  children: React.ReactNode;
 }
 
 const AutoWidth: FC<AutoWidthProps> = ({ children, state }) => {

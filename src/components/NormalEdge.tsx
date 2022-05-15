@@ -1,6 +1,5 @@
-import { getBezierPath, getEdgeCenter, getMarkerEnd } from 'react-flow-renderer';
+import { getBezierPath, getEdgeCenter, EdgeProps } from '@kinark/react-flow-renderer';
 import styled from 'styled-components';
-import { EdgeProps } from 'react-flow-renderer';
 
 const foreignObjectSize = 40;
 

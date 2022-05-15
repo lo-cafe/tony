@@ -30,7 +30,10 @@ import ReactFlow, {
   useViewport,
   ReactFlowInstance,
   useUpdateNodeInternals,
-} from 'react-flow-renderer/src';
+  NodeChange,
+  EdgeChange,
+  Connection,
+} from '@kinark/react-flow-renderer';
 import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
 import { lighten, getLuminance, darken } from 'polished';
 
@@ -204,7 +207,7 @@ const Story = () => {
     loadOrSave(data.current);
   };
 
-  const bindUndoRedo = useCallback((event) => {
+  const bindUndoRedo = useCallback((event: KeyboardEvent) => {
     if (
       document.activeElement?.tagName === 'INPUT' ||
       document.activeElement?.tagName === 'TEXTAREA'
@@ -643,20 +646,20 @@ const Story = () => {
   };
 
   const onNodesChange = useCallback(
-    (changes) => {
+    (changes: NodeChange[]) => {
       setNodes((nds) => applyNodeChanges(changes, nds));
     },
     [setNodes]
   );
   const onEdgesChange = useCallback(
-    (changes) => {
+    (changes: EdgeChange[]) => {
       snapshot();
       setEdges((eds) => applyEdgeChanges(changes, eds));
     },
     [setEdges]
   );
   const onConnect = useCallback(
-    (connection) => {
+    (connection: Connection) => {
       snapshot();
       setEdges((eds) =>
         addEdge(
@@ -672,11 +675,11 @@ const Story = () => {
     [setEdges]
   );
   const removeEdge = useCallback(
-    (edgeId) => setEdges((eds) => eds.filter((e) => e.id !== edgeId)),
+    (edgeId: ID) => setEdges((eds) => eds.filter((e) => e.id !== edgeId)),
     [setEdges]
   );
   const onEdgeUpdate = useCallback(
-    (oldEdge, newConnection) => {
+    (oldEdge: Edge, newConnection: Connection) => {
       snapshot();
       setEdges((els) => updateEdge(oldEdge, newConnection, els));
     },
@@ -981,18 +984,6 @@ const Story = () => {
     [nodes, getRelatedEdges]
   );
 
-  // useEffect(() => {
-  //   if (spacePressed) {
-  //     document.querySelectorAll('.react-flow__node').forEach((x) => {
-  //       x.classList.add('really-unselectable');
-  //     });
-  //   } else {
-  //     document.querySelectorAll('.react-flow__node').forEach((x) => {
-  //       x.classList.remove('really-unselectable');
-  //     });
-  //   }
-  // }, [spacePressed]);
-
   useEffect(() => {
     if (!scheduleSnapshop) return;
     snapshot();
@@ -1285,8 +1276,9 @@ const Story = () => {
             onStop={onEndDragToAddNewNode}
           >
             <CardAdd ref={newItemRef} isAddingNewNode={isAddingNewNode}>
-              <ChatNodeCard
-                position={{ x: 0, y: 0 }}
+              {/* <ChatNodeCard
+                posX={0}
+                posY={0}
                 connectable={false}
                 id="addNode"
                 data={{
@@ -1294,7 +1286,7 @@ const Story = () => {
                   character: null,
                 }}
                 testId="add-node-handler"
-              />
+              /> */}
             </CardAdd>
           </Draggable>
         )}

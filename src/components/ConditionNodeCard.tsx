@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { FiHelpCircle } from 'react-icons/fi';
-import { Handle, Position, NodeProps, Connection } from 'react-flow-renderer/src';
+import { Handle, Position, NodeProps, Connection } from '@kinark/react-flow-renderer';
 import { darken, lighten, getLuminance } from 'polished';
 
 import useUserStore from '~/instances/userStore';
@@ -21,7 +21,7 @@ interface ConditionNodeCardProps {
   ) => boolean;
 }
 
-const ConditionNodeCard: FC<{ className: string } & NodeProps<ConditionNodeCardProps>> = memo(
+const ConditionNodeCard: FC<NodeProps<ConditionNodeCardProps> & { className?: string }> = memo(
   ({ id, data, selected, className }) => {
     const { showNodeIds, showConditionsConnections } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {

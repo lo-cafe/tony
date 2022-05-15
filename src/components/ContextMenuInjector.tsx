@@ -6,6 +6,7 @@ import Popup from './Popup';
 interface ContextMenuInjectorProps {
   options?: any;
   popupElement?: React.ReactElement;
+  children?: React.ReactNode
 }
 
 const ContextMenuInjector: FC<ContextMenuInjectorProps> = ({ children, options, popupElement }) => {
