@@ -153,12 +153,12 @@ const Story = () => {
   const [workspacesNames, _setWorkspacesNames] = useState<WorkspacesNames[]>(
     data.current.map(({ id, name }) => ({ id, name }))
   );
-  const [characters, setCharacters] = useState<Character[]>(data.current[0]?.characters);
+  const [characters, setCharacters] = useState<Character[]>(data.current[0]?.characters || []);
   const [chatsNames, _setChatsNames] = useState<ChatNames[]>(
-    data.current[0]?.chats.map(({ id, name }) => ({ id, name }))
+    data.current[0]?.chats.map(({ id, name }) => ({ id, name })) || []
   );
-  const [nodes, setNodes] = useState<ChatNode[]>(data.current[0]?.chats[0]?.nodes);
-  const [edges, setEdges] = useState<Edge[]>(data.current[0]?.chats[0]?.edges);
+  const [nodes, setNodes] = useState<ChatNode[]>(data.current[0]?.chats[0]?.nodes || []);
+  const [edges, setEdges] = useState<Edge[]>(data.current[0]?.chats[0]?.edges || []);
   const { zoom } = useViewport();
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(
