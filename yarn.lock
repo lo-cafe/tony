@@ -1635,10 +1635,10 @@
   resolved "https://registry.yarnpkg.com/@juggle/resize-observer/-/resize-observer-3.3.1.tgz#b50a781709c81e10701004214340f25475a171a0"
   integrity sha512-zMM9Ds+SawiUkakS7y94Ymqx+S0ORzpG3frZirN3l+UlXUmSUR7hF4wxCVqW+ei94JzV5kt0uXBcoOEAuiydrw==
 
-"'@kinark/react-flow-renderer'@^10.2.2":
-  version "10.2.2"
-  resolved "https://registry.yarnpkg.com/'@kinark/react-flow-renderer'/-/react-flow-renderer-10.2.2.tgz#08a0ac4969b49d435c8bd1cdfd8b5fd784f26bad"
-  integrity sha512-zQoAxkom8FyBGQ1OHKzmOgaJ/V4SZJu/GwIU3JS6lYGEMEC1p1a9FfjBlacvbsnusnL/Bg8zKnTm58KQ2zuNPA==
+"@kinark/react-flow-renderer@^10.2.3":
+  version "10.2.3"
+  resolved "https://registry.yarnpkg.com/@kinark/react-flow-renderer/-/react-flow-renderer-10.2.3.tgz#bd4ce62809666798b621e0ae4e1ff1abbfb545c4"
+  integrity sha512-1jGolmLTakc6/LqvHMUBVSAh1Xqh47WnawZYuJeqo+wv3TY/pVpPRoYoTn9NbQzmUh69eNugSpbwUuo0Fk7W5A==
   dependencies:
     "@babel/runtime" "^7.17.9"
     classcat "^5.0.3"

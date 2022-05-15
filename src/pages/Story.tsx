@@ -33,6 +33,7 @@ import ReactFlow, {
   NodeChange,
   EdgeChange,
   Connection,
+  OnSelectionChangeParams,
 } from '@kinark/react-flow-renderer';
 import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
 import { lighten, getLuminance, darken } from 'polished';
@@ -142,7 +143,7 @@ const Story = () => {
     reset,
   } = useTimeTravel<DataStructure>(loadedData.current!);
   const reactFlowWrapper = useRef(null);
-  const lastCopied = useRef<null | Node>(null);
+  const lastCopied = useRef<null | ChatNode[]>(null);
   const playModeAnswersIds = useRef<ID[]>([]);
   const newItemRef = useRef(null);
   const debounceCloudSave = useRef<any>(null);
@@ -190,6 +191,10 @@ const Story = () => {
   const getSelectedChat = (obj: DataStructure): Chat | null =>
     getSelectedWorkspace(obj)?.chats.find((c) => c.id === selectedChatId) || null;
 
+  const selectedWorkspace = getSelectedWorkspace(data.current);
+  const selectedChat = getSelectedChat(data.current);
+  const selectedNodes = useMemo(() => nodes && nodes.filter((x) => x.selected), [nodes]);
+
   const getRelatedEdges = useCallback(
     memoizee((nodeId: ID) => edges.filter((e) => e.source === nodeId || e.target === nodeId)),
     [nodes, edges]
@@ -236,9 +241,6 @@ const Story = () => {
     };
   }, []);
 
-  const selectedWorkspace = getSelectedWorkspace(data.current);
-  const selectedChat = getSelectedChat(data.current);
-  const selectedNodes = useMemo(() => nodes && nodes.filter((x) => x.selected), [nodes]);
   const conditionsBundle = useMemo<({ nodes: ID[] } & ChatNode)[]>(() => {
     if (prevCounditionBundle.current && debounceConditionBundle.current) {
       clearTimeout(debounceConditionBundle.current);
@@ -531,92 +533,6 @@ const Story = () => {
     }));
   };
 
-  const exportToJson = (id: ID) => {
-    const dataCopy = transformData();
-    const target = dataCopy.find((x) => x.id === id);
-    if (!target) return;
-    downloadFile({
-      data: JSON.stringify(target),
-      fileName: `${target.name}-Chats.json`,
-      fileType: 'text/json',
-    });
-  };
-
-  const importFromJson = (ref: React.RefObject<HTMLInputElement>, _e: any) => {
-    const e = _e;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const newWorkspace = JSON.parse(event.target?.result as string);
-      if (!newWorkspace) return;
-      try {
-        const transformedData: Workspace = {
-          ...newWorkspace,
-          chats: newWorkspace.chats.map(
-            (ch: any): Chat => ({
-              ...ch,
-              nodes: ch.nodes.map(
-                (nd: any): ChatNode => ({
-                  id: nd.id,
-                  type: nd.type,
-                  position: nd.tonyData.position,
-                  data: {
-                    message: nd.message,
-                    character: nd.character,
-                  },
-                })
-              ),
-              edges: ch.nodes
-                .map(
-                  (nd: any): Edge =>
-                    nd.type === CHAT_NODE_CONDITION_TYPE
-                      ? [
-                          ...nd.goesTo.conditions.map((g: ID) => ({
-                            id: nanoid(ID_SIZE),
-                            source: nd.id,
-                            target: g,
-                          })),
-                          ...nd.goesTo.yes.map((g: ID) => ({
-                            id: nanoid(ID_SIZE),
-                            source: nd.id,
-                            target: g,
-                          })),
-                          ...nd.goesTo.no.map((g: ID) => ({
-                            id: nanoid(ID_SIZE),
-                            source: nd.id,
-                            target: g,
-                          })),
-                        ]
-                      : nd.goesTo.map((g: ID) => ({
-                          id: nanoid(ID_SIZE),
-                          source: nd.id,
-                          target: g,
-                        }))
-                )
-                .flat(),
-            })
-          ),
-        };
-        snapshot();
-        setWorkspacesNames((old) => [
-          ...old,
-          { id: transformedData.id, name: transformedData.name },
-        ]);
-        data.current = [...data.current, transformedData];
-        ref.current!.value = '';
-      } catch (error) {
-        console.log(error);
-        alert('Invalid JSON file');
-      }
-    };
-    reader.readAsText(e.target.files[0]);
-  };
-
-  // const play = (id: ID) => {
-  //   const dataCopy = getSelectedChat(cloneDeep(data));
-  //   const target = dataCopy?.nodes.find((x) => x.id === id);
-  //   if (!target || target.type !== CHAT_NODE_TEXT_TYPE) return;
-  //   setPlayNode(id);
-  // };
   const newEdge = ({
     source,
     sourceHandle,
@@ -689,21 +605,19 @@ const Story = () => {
     (e: React.MouseEvent, rawNode: ChatNode) => {
       snapshot();
       if (!altPressed) return true;
-      const node = nodes.find((nd) => nd.id === rawNode.id)!;
-      lastCopied.current = node;
-      const newNodeId = nanoid(ID_SIZE);
-      setNodes((nds) => [
-        ...nds.map((nd) => ({ ...nd, selected: false })),
-        {
-          ...node,
-          selected: true,
-          id: newNodeId,
-          data: {
-            ...node.data,
-            isCopy: true,
-          },
+      const _clonedSelectedNodes = cloneDeep(selectedNodes);
+      const clonedSelectedNodes = _clonedSelectedNodes.length ? _clonedSelectedNodes : [rawNode];
+      lastCopied.current = clonedSelectedNodes;
+      const newNodes = cloneDeep(clonedSelectedNodes).map((node) => ({
+        ...node,
+        id: nanoid(ID_SIZE),
+        selected: true,
+        data: {
+          ...node.data,
+          isCopy: true,
         },
-      ]);
+      }));
+      setNodes((nds) => [...nds.map((nd) => ({ ...nd, selected: false })), ...newNodes]);
       // const relatedEdges = getRelatedEdges(node.id).map((e) => ({
       //   ...e,
       //   id: nanoid(ID_SIZE),
@@ -720,18 +634,22 @@ const Story = () => {
     (e: React.MouseEvent, node: ChatNode) => {
       if (!altPressed || !lastCopied.current) return;
       setNodes((nds) =>
-        nds.map((nd) =>
-          nd.id === lastCopied.current!.id
+        nds.map((nd) => {
+          const lastCopiedNd = lastCopied.current!.find((cnd) => cnd.id === nd.id);
+          return lastCopiedNd
             ? {
                 ...nd,
                 data: {
                   ...nd.data,
                   isCopy: false,
                 },
-                position: { x: lastCopied.current!.position.x, y: lastCopied.current!.position.y },
+                position: {
+                  x: lastCopiedNd.position.x,
+                  y: lastCopiedNd.position.y,
+                },
               }
-            : nd
-        )
+            : nd;
+        })
       );
       return true;
     },
@@ -875,6 +793,86 @@ const Story = () => {
   const resetZoom = () => {
     if (!reactFlowInstance) return;
     reactFlowInstance.zoomTo(1, { duration: 500 });
+  };
+
+  const exportToJson = (id: ID) => {
+    const dataCopy = transformData();
+    const target = dataCopy.find((x) => x.id === id);
+    if (!target) return;
+    downloadFile({
+      data: JSON.stringify(target),
+      fileName: `${target.name}-Chats.json`,
+      fileType: 'text/json',
+    });
+  };
+
+  const importFromJson = (ref: React.RefObject<HTMLInputElement>, _e: any) => {
+    const e = _e;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const newWorkspace = JSON.parse(event.target?.result as string);
+      if (!newWorkspace) return;
+      try {
+        const transformedData: Workspace = {
+          ...newWorkspace,
+          chats: newWorkspace.chats.map(
+            (ch: any): Chat => ({
+              ...ch,
+              nodes: ch.nodes.map(
+                (nd: any): ChatNode => ({
+                  id: nd.id,
+                  type: nd.type,
+                  position: nd.tonyData.position,
+                  data: {
+                    message: nd.message,
+                    character: nd.character,
+                  },
+                })
+              ),
+              edges: ch.nodes
+                .map(
+                  (nd: any): Edge =>
+                    nd.type === CHAT_NODE_CONDITION_TYPE
+                      ? [
+                          ...nd.goesTo.conditions.map((g: ID) => ({
+                            id: nanoid(ID_SIZE),
+                            source: nd.id,
+                            target: g,
+                          })),
+                          ...nd.goesTo.yes.map((g: ID) => ({
+                            id: nanoid(ID_SIZE),
+                            source: nd.id,
+                            target: g,
+                          })),
+                          ...nd.goesTo.no.map((g: ID) => ({
+                            id: nanoid(ID_SIZE),
+                            source: nd.id,
+                            target: g,
+                          })),
+                        ]
+                      : nd.goesTo.map((g: ID) => ({
+                          id: nanoid(ID_SIZE),
+                          source: nd.id,
+                          target: g,
+                        }))
+                )
+                .flat(),
+            })
+          ),
+        };
+        snapshot();
+        setWorkspacesNames((old) => [
+          ...old,
+          { id: transformedData.id, name: transformedData.name },
+        ]);
+        data.current = [...data.current, transformedData];
+        ref.current!.value = '';
+      } catch (error) {
+        console.log(error);
+        alert('Invalid JSON file');
+      }
+    };
+    reader.readAsText(e.target.files[0]);
   };
 
   const isConnectionValid = useCallback(
@@ -1252,6 +1250,8 @@ const Story = () => {
           panOnDrag={spacePressed}
           allowPanOverNodes
           onlyRenderVisibleElements
+          panning={spacePressed}
+          elevateEdgesOnSelect
         >
           <StyledMiniMap
             maskColor={
@@ -1488,10 +1488,14 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   }
 `;
 
-const StyledReactFlow = styled(ReactFlow)`
+const StyledReactFlow = styled(ReactFlow)<{ panning?: boolean }>`
   width: 100%;
   height: 100vh;
   background: ${({ theme }) => theme.colors.bg};
+  cursor: ${({ panning }) => (panning ? 'grab' : 'default')};
+  &:active {
+    cursor: ${({ panning }) => (panning ? 'grabbing' : 'default')};
+  }
 `;
 
 const PlayModeWrapper = styled.div`

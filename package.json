@@ -12,7 +12,7 @@
     "ci": "start-server-and-test dev http-get://localhost:3000 test"
   },
   "dependencies": {
-    "@kinark/react-flow-renderer": "^10.2.2",
+    "@kinark/react-flow-renderer": "^10.2.3",
     "@popperjs/core": "^2.11.4",
     "axios": "^0.26.0",
     "d3": "^7.3.0",
