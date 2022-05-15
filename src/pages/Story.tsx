@@ -1276,17 +1276,21 @@ const Story = () => {
             onStop={onEndDragToAddNewNode}
           >
             <CardAdd ref={newItemRef} isAddingNewNode={isAddingNewNode}>
-              {/* <ChatNodeCard
-                posX={0}
-                posY={0}
-                connectable={false}
+              <ChatNodeCard
+                xPos={0}
+                yPos={0}
+                isConnectable={false}
                 id="addNode"
+                type="text"
+                zIndex={1}
+                selected={false}
+                dragging={false}
                 data={{
                   message: 'Add me!',
                   character: null,
                 }}
                 testId="add-node-handler"
-              /> */}
+              />
             </CardAdd>
           </Draggable>
         )}
