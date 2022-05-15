@@ -1,4 +1,4 @@
-import { Node, Edge } from 'react-flow-renderer';
+import { Node, Edge } from 'react-flow-renderer/src';
 
 import {
   CHAT_NODE_CONDITION_TYPE,

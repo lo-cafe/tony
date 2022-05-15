@@ -27,7 +27,7 @@
     "react-colorful": "^5.5.1",
     "react-dom": "^17.0.2",
     "react-draggable": "^4.4.4",
-    "react-flow-renderer": "^10.1.0",
+    "react-flow-renderer": "Kinark/react-flow#personal-use",
     "react-icons": "^4.3.1",
     "react-loader-spinner": "^6.0.0-0",
     "react-popper": "^2.2.5",

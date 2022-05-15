@@ -30,8 +30,7 @@ import ReactFlow, {
   useViewport,
   ReactFlowInstance,
   useUpdateNodeInternals,
-  useReactFlow,
-} from 'react-flow-renderer';
+} from 'react-flow-renderer/src';
 import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
 import { lighten, getLuminance, darken } from 'polished';
 
@@ -206,7 +205,11 @@ const Story = () => {
   };
 
   const bindUndoRedo = useCallback((event) => {
-    if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA' ) return;
+    if (
+      document.activeElement?.tagName === 'INPUT' ||
+      document.activeElement?.tagName === 'TEXTAREA'
+    )
+      return;
     if ((event.metaKey || event.ctrlKey) && event.key === 'z') {
       if (event.shiftKey) {
         callRedo();
@@ -978,6 +981,18 @@ const Story = () => {
     [nodes, getRelatedEdges]
   );
 
+  // useEffect(() => {
+  //   if (spacePressed) {
+  //     document.querySelectorAll('.react-flow__node').forEach((x) => {
+  //       x.classList.add('really-unselectable');
+  //     });
+  //   } else {
+  //     document.querySelectorAll('.react-flow__node').forEach((x) => {
+  //       x.classList.remove('really-unselectable');
+  //     });
+  //   }
+  // }, [spacePressed]);
+
   useEffect(() => {
     if (!scheduleSnapshop) return;
     snapshot();
@@ -1212,6 +1227,7 @@ const Story = () => {
             ...node,
             data: {
               ...node.data,
+              spacePressed,
               setCharacter,
               characters: characters,
               isConnectionValid,
@@ -1225,6 +1241,7 @@ const Story = () => {
             ...edge,
             data: {
               ...edge.data,
+              spacePressed,
               removeEdge,
             },
           }))}
@@ -1236,11 +1253,14 @@ const Story = () => {
           onNodeDragStop={onNodeDragStop}
           onInit={setReactFlowInstance}
           onConnect={onConnect}
-          selectNodesOnDrag={true}
+          selectNodesOnDrag
+          selectionKeyCode={true}
           multiSelectionKeyCode={multiselectKeys}
           minZoom={0.1}
           maxZoom={4}
           panOnDrag={spacePressed}
+          allowPanOverNodes
+          onlyRenderVisibleElements
         >
           <StyledMiniMap
             maskColor={

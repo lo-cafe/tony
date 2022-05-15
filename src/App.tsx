@@ -65,5 +65,8 @@ const GlobalStyles = createGlobalStyle`
   .react-flow__attribution {
     display: none !important;
   }
+  /* .really-unselectable {
+    pointer-events: none !important;
+  } */
 `;
 //

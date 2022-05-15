@@ -1,7 +1,7 @@
-import { useState, useEffect, memo } from 'react';
-import styled, { keyframes, css } from 'styled-components';
+import { memo } from 'react';
+import styled, { keyframes } from 'styled-components';
 import { FiHelpCircle } from 'react-icons/fi';
-import { Handle, Position, Node, Connection } from 'react-flow-renderer';
+import { Handle, Position, NodeProps, Connection } from 'react-flow-renderer/src';
 import { darken, lighten, getLuminance } from 'polished';
 
 import useUserStore from '~/instances/userStore';
@@ -21,7 +21,7 @@ interface ConditionNodeCardProps {
   ) => boolean;
 }
 
-const ConditionNodeCard: FC<{ className: string } & Node<ConditionNodeCardProps>> = memo(
+const ConditionNodeCard: FC<{ className: string } & NodeProps<ConditionNodeCardProps>> = memo(
   ({ id, data, selected, className }) => {
     const { showNodeIds, showConditionsConnections } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {

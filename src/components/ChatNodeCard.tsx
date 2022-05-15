@@ -1,9 +1,8 @@
 import { useState, useEffect, memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FiMessageSquare, FiUser, FiList, FiGitBranch } from 'react-icons/fi';
-import { Handle, Position, Node, Connection } from 'react-flow-renderer';
+import { Handle, Position, NodeProps, Connection } from 'react-flow-renderer';
 import { darken, lighten, rgba, getLuminance } from 'polished';
-import { Edge } from 'react-flow-renderer';
 
 import useUserStore from '~/instances/userStore';
 import LaceString from '~/components/LaceString';
@@ -27,8 +26,8 @@ interface ChatNodeCardProps extends ChatNodeData {
   ) => boolean;
 }
 
-const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
-  ({ type, id, data, selected, className, connectable, testId }) => {
+const ChatNodeCard: FC<NodeProps<ChatNodeCardProps> & { testId?: string, className?: string; }> = memo(
+  ({ type, id, data, selected, className, isConnectable, testId }) => {
     const { showNodeIds } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
       if (!data.isConnectionValid || !connection.source || !connection.target) return true;
@@ -51,7 +50,7 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
           isValidConnection={isValidConnection}
           type="target"
           id="target"
-          isConnectable={connectable}
+          isConnectable={isConnectable}
           position={Position.Top}
         />
         <ItemTitleBar>
@@ -113,7 +112,7 @@ const ChatNodeCard: FC<Node<ChatNodeCardProps> & { testId?: string }> = memo(
         </ItemBottomBar>
         <SourceHandle
           type="source"
-          isConnectable={connectable}
+          isConnectable={isConnectable}
           isValidConnection={isValidConnection}
           position={Position.Bottom}
           id="a"
@@ -279,9 +278,9 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
     opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   opacity: ${({ fadeOut }) => (fadeOut ? 0.35 : 1)};
   animation: ${({ cardType, theme }) =>
-      cardType === 'answer'
-        ? putInPlace(rgba(theme.nodeColors.answerNode, 0.5))
-        : putInPlace(rgba(theme.nodeColors.textNode, 0.5))}
+      putInPlace(
+        rgba(cardType === 'answer' ? theme.nodeColors.answerNode : theme.nodeColors.textNode, 0.5)
+      )}
     1s ease-out;
   ${ItemTitleBar}, ${Tag}, ${SourceHandle} {
     transition: transform ${({ theme }) => theme.transitions.normal}ms ease-out,
