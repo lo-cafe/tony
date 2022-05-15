@@ -200,32 +200,33 @@ const Story = () => {
     [nodes, edges]
   );
 
-  const callUndo = () => {
+  const callUndo = useCallback(() => {
     undo();
     updateMirrors();
-    loadOrSave(data.current);
-  };
+  }, [selectedWorkspaceId, selectedChatId]);
 
-  const callRedo = () => {
+  const callRedo = useCallback(() => {
     redo();
     updateMirrors();
-    loadOrSave(data.current);
-  };
+  }, [selectedWorkspaceId, selectedChatId]);
 
-  const bindUndoRedo = useCallback((event: KeyboardEvent) => {
-    if (
-      document.activeElement?.tagName === 'INPUT' ||
-      document.activeElement?.tagName === 'TEXTAREA'
-    )
-      return;
-    if ((event.metaKey || event.ctrlKey) && event.key === 'z') {
-      if (event.shiftKey) {
-        callRedo();
+  const bindUndoRedo = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        document.activeElement?.tagName === 'INPUT' ||
+        document.activeElement?.tagName === 'TEXTAREA'
+      )
         return;
+      if ((event.metaKey || event.ctrlKey) && event.key === 'z') {
+        if (event.shiftKey) {
+          callRedo();
+          return;
+        }
+        callUndo();
       }
-      callUndo();
-    }
-  }, []);
+    },
+    [callUndo, callRedo]
+  );
 
   useEffect(() => {
     const imagesPreload = [lightButton, darkButton, autoButton];
@@ -239,7 +240,7 @@ const Story = () => {
     return () => {
       document.removeEventListener('keydown', bindUndoRedo);
     };
-  }, []);
+  }, [bindUndoRedo]);
 
   const conditionsBundle = useMemo<({ nodes: ID[] } & ChatNode)[]>(() => {
     if (prevCounditionBundle.current && debounceConditionBundle.current) {
@@ -1507,7 +1508,7 @@ const PlayModeWrapper = styled.div`
   width: 100%;
   height: 100%;
   z-index: 20;
-  background-color: ${({theme}) => theme.colors.blurBg};
+  background-color: ${({ theme }) => theme.colors.blurBg};
   backdrop-filter: blur(35px) saturate(200%);
   display: flex;
   align-items: center;
