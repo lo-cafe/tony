@@ -1217,7 +1217,6 @@ const Story = () => {
             ...node,
             data: {
               ...node.data,
-              spacePressed,
               setCharacter,
               characters: characters,
               isConnectionValid,
