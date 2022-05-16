@@ -16,6 +16,7 @@ import {
   FiCornerLeftDown,
   FiUpload,
   FiHeart,
+  FiGitBranch,
 } from 'react-icons/fi';
 import ReactFlow, {
   addEdge,
@@ -54,6 +55,7 @@ import lightButton from '~/assets/lightButton.png';
 import darkButton from '~/assets/darkButton.png';
 import autoButton from '~/assets/autoButton.png';
 
+import ContextMenuInjector from '~/components/ContextMenuInjector';
 import Title from '~/components/Title';
 import discordIcon from '~/components/discord.svg';
 import Input from '~/components/Input';
@@ -1100,7 +1102,7 @@ const Story = () => {
               }
             >
               <SidePanelContent>
-                {selectedNodes.length === 1 ? (
+                {selectedNodes.length > 1 && selectedNodes.length === 1 ? (
                   <ItemTitleBar>
                     <ItemTitle>
                       {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE ? (
@@ -1141,6 +1143,94 @@ const Story = () => {
                     <span>Condition</span>
                   </TypeChooser>
                 </TypeChooserWrapper>
+                {selectedNodes.length > 1 &&
+                  selectedNodes.every((nd) => nd.type !== CHAT_NODE_CONDITION_TYPE) && (
+                    <ItemBottomBar>
+                      {selectedNodes.every((nd) => nd.type === CHAT_NODE_ANSWER_TYPE) && (
+                        <ContextMenuInjector
+                          options={nodes
+                            .filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE)
+                            ?.map((cond) => ({
+                              label: cond.data.name || 'Unamed condition',
+                              icon: <FiGitBranch />,
+                              selected: selectedNodes.every((nd) =>
+                                conditionsBundle
+                                  ?.find((c) => c.id === cond.id)
+                                  ?.nodes.includes(nd.id)
+                              ),
+                              type: 'item',
+                              onClick: () => {
+                                selectedNodes.forEach((nd) => {
+                                  newEdge({
+                                    source: cond.id,
+                                    sourceHandle: 'condition',
+                                    target: nd.id,
+                                    targetHandle: 'target',
+                                  });
+                                });
+                              },
+                            }))}
+                        >
+                          <Tag
+                            nodeColor={
+                              selectedNodes.every((nd) => nd.type === selectedNodes[0].type) &&
+                              theme.nodeColors[
+                                COLORS[selectedNodes[0].type as ChatNodeTypes] as
+                                  | 'answerNode'
+                                  | 'textNode'
+                                  | 'conditionNode'
+                              ]
+                            }
+                          >
+                            <FiGitBranch />
+                            <span>
+                              {conditionsBundle.filter((cond) =>
+                                selectedNodes
+                                  .map((x) => x.id)
+                                  .every((ndId) => cond.nodes.includes(ndId))
+                              ).length || 'Select'}{' '}
+                              conditions
+                            </span>
+                          </Tag>
+                        </ContextMenuInjector>
+                      )}
+                      <ContextMenuInjector
+                        options={characters.map((char) => ({
+                          label: char.name,
+                          icon: <FiUser />,
+                          type: 'item',
+                          onClick: () => {
+                            selectedNodes.forEach((nd) => {
+                              setCharacter(nd.id, char.id);
+                            });
+                          },
+                        }))}
+                      >
+                        <Tag
+                          nodeColor={
+                            selectedNodes.every((nd) => nd.type === selectedNodes[0].type) &&
+                            theme.nodeColors[
+                              COLORS[selectedNodes[0].type as ChatNodeTypes] as
+                                | 'answerNode'
+                                | 'textNode'
+                                | 'conditionNode'
+                            ]
+                          }
+                        >
+                          <FiUser />
+                          <span>
+                            {selectedNodes[0].data.character &&
+                            selectedNodes.every(
+                              (nd) => nd.data.character === selectedNodes[0].data.character
+                            )
+                              ? characters.find(({ id }) => id === selectedNodes[0].data.character)!
+                                  .name
+                              : 'Select character'}
+                          </span>
+                        </Tag>
+                      </ContextMenuInjector>
+                    </ItemBottomBar>
+                  )}
                 {selectedNodes.length === 1 &&
                   selectedNodes[0].type !== CHAT_NODE_CONDITION_TYPE && (
                     <Textarea
@@ -1313,6 +1403,37 @@ const Story = () => {
 };
 
 export default Story;
+
+const ItemBottomBar = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  gap: 4px;
+`;
+const Tag = styled.div<{ nodeColor?: string | false }>`
+  background-color: ${({ nodeColor }) => nodeColor || 'gray'};
+  padding: 3px 6px;
+  border-radius: 8px;
+  color: white;
+  min-width: 0;
+  cursor: pointer;
+  span {
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  transition: background-color ${({ theme }) => theme.transitions.normal}ms ease-out;
+  &:hover {
+    background-color: ${({ nodeColor }) => darken(0.05, nodeColor || 'gray')};
+  }
+`;
 
 const Discord = styled.img`
   position: fixed;
