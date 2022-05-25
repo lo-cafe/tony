@@ -22,7 +22,6 @@ import ReactFlow, {
   addEdge,
   applyNodeChanges,
   applyEdgeChanges,
-  Node,
   Edge,
   useKeyPress,
   MiniMap,
@@ -34,7 +33,6 @@ import ReactFlow, {
   NodeChange,
   EdgeChange,
   Connection,
-  OnSelectionChangeParams,
 } from '@kinark/react-flow-renderer';
 import { getFirestore, getDoc, setDoc, doc } from 'firebase/firestore';
 import { lighten, getLuminance, darken } from 'polished';
@@ -171,10 +169,10 @@ const Story = () => {
       ? loadedData.current[0].chats[0].id
       : null
   );
+  const [isSelecting, setIsSelecting] = useState(false);
   const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
   const [spotlight, setSpotlight] = useState<ID | null>(null);
   const [scheduleSnapshop, setScheduleSnapshot] = useState(false);
-
   const [whatToPlay, setWhatToPlay] = useState<{ toShow: ChatNode; buttons: ChatNode[] } | null>(
     null
   );
@@ -386,20 +384,30 @@ const Story = () => {
     if (!targetNds.length) return;
     const targetIds = targetNds.map((nd) => nd.id);
     snapshot();
-    setNodes(
-      nodes.map((item) =>
+    setNodes((old) => {
+      const newNodes = old.map((item) =>
         targetIds.includes(item.id)
           ? {
               ...item,
               type,
             }
           : item
-      )
-    );
+      );
+      const relatedEdges = targetIds.map((ndId) => getRelatedEdges(ndId));
+      const edgesToBeRemoved: ID[] = [];
+      relatedEdges.forEach((edgs) => {
+        edgs.forEach((edg) => {
+          if (!isConnectionValid(edg.source, edg.target, edg.sourceHandle, newNodes))
+            edgesToBeRemoved.push(edg.id);
+        });
+      });
+      setEdges((old) => old.filter((edg) => !edgesToBeRemoved.includes(edg.id)));
+      return newNodes;
+    });
     // if (type === CHAT_NODE_CONDITION_TYPE)
-    setEdges((old) =>
-      old.filter((edg) => !targetIds.includes(edg.source) && !targetIds.includes(edg.target))
-    );
+    // setEdges((old) =>
+    //   old.filter((edg) => !targetIds.includes(edg.source) && !targetIds.includes(edg.target))
+    // );
     targetIds.forEach((id) => updateNodeInternals(id));
   };
 
@@ -701,6 +709,14 @@ const Story = () => {
     setNodes((nds) => [...nds, newNode]);
   };
 
+  const onSelectionDragStart = () => {
+    setIsSelecting(true);
+  };
+
+  const onSelectionDragStop = () => {
+    setIsSelecting(false);
+  };
+
   const setWorkspace = (id: ID) => {
     setSelectedWorkspaceId(id);
     const firstChat = data.current.find((x) => x.id === id)?.chats[0];
@@ -883,13 +899,16 @@ const Story = () => {
       (
         sourceId: ID,
         targetId: ID,
-        sourceHandle: string | null,
-        _targetHandle: string | null
+        sourceHandle?: string | null,
+        alternativeNodes?: ChatNode[]
       ): boolean => {
-        const _sourceNode = nodes.find((x) => x.id === sourceId);
-        const _targetNode = nodes.find((x) => x.id === targetId);
+        const aNodes =
+          !alternativeNodes || typeof alternativeNodes !== 'object' ? nodes : alternativeNodes;
+        const _sourceNode = aNodes.find((x) => x.id === sourceId);
+        const _targetNode = aNodes.find((x) => x.id === targetId);
         const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
         const targetNode = sourceHandle === 'target' ? _sourceNode : _targetNode;
+
         if (!sourceNode || !targetNode) return false;
 
         const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
@@ -913,22 +932,24 @@ const Story = () => {
           handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
         ) => {
           const relatedEdges = getRelatedEdges(node.id);
-          const nextNodes = nodes.filter((x) =>
+          const nextNodes = aNodes.filter((x) =>
             relatedEdges
               .filter((x) => x.source === node.id && x.sourceHandle === handler)
               .map((e) => e.target)
               .includes(x.id)
           );
           return nextNodes;
-          // hihi
         };
 
         const getActualIsItAMatch = (
-          childrenNodes: ChatNode[],
+          _childrenNodes: ChatNode[],
           _base: ChatNode[] = [],
           alternateSource?: ChatNode
         ): boolean => {
-          if (childrenNodes.length === 0) return true;
+          if (_childrenNodes.length === 0) return true;
+          const childrenNodes = _childrenNodes.filter(
+            (x) => _childrenNodes.filter((y) => y.id === x.id).length === 1
+          );
           const base: ChatNode[] = [..._base];
           const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
           const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
@@ -954,7 +975,7 @@ const Story = () => {
 
         const findNearestNormalParents = (node: ChatNode) => {
           const relatedEdges = getRelatedEdges(node.id);
-          const parentNodes = nodes.filter((x) =>
+          const parentNodes = aNodes.filter((x) =>
             relatedEdges
               .filter((e) => e.target === node.id)
               .map((e) => e.source)
@@ -1015,7 +1036,7 @@ const Story = () => {
           </div>
         </PlayModeWrapper>
       )}
-      <OverlayWrapper>
+      <OverlayWrapper disabled={isSelecting}>
         <OTopLeft data-testid="workspaces-list">
           <FScreenListing
             numberOfRecentItems={2}
@@ -1330,9 +1351,11 @@ const Story = () => {
           onNodeDragStart={onNodeDragStart}
           onNodeDrag={onNodeDrag}
           onNodeDragStop={onNodeDragStop}
+          onMouseDown={onSelectionDragStart}
+          onMouseUp={onSelectionDragStop}
           onInit={setReactFlowInstance}
           onConnect={onConnect}
-          selectNodesOnDrag
+          selectNodesOnDrag={false}
           selectionKeyCode={true}
           multiSelectionKeyCode={multiselectKeys}
           minZoom={0.1}
@@ -1503,7 +1526,7 @@ const StyledMiniMap = styled(MiniMap)`
   background: ${({ theme }) => lighten(0.1, theme.colors.bg)} !important;
 `;
 
-const OverlayWrapper = styled.div`
+const OverlayWrapper = styled.div<{ disabled?: boolean }>`
   display: grid;
   grid-template-columns: auto 1fr auto;
   grid-template-rows: auto auto 1fr auto;
@@ -1521,7 +1544,7 @@ const OverlayWrapper = styled.div`
   pointer-events: none;
   padding: 16px;
   * > * {
-    pointer-events: all;
+    pointer-events: ${({ disabled }) => (disabled ? 'none' : 'all')} !important;
   }
 `;
 
@@ -1763,7 +1786,7 @@ const SidePanel = styled.div<{ tagColor?: string | false }>`
     color: ${({ tagColor }) => tagColor || '#fff'};
   }
   -webkit-user-drag: none;
-  & * {
+  * {
     user-select: none;
     -webkit-user-drag: none;
   }
