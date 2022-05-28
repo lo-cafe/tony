@@ -16,7 +16,6 @@ import {
   FiCornerLeftDown,
   FiUpload,
   FiHeart,
-  FiGitBranch,
 } from 'react-icons/fi';
 import ReactFlow, {
   addEdge,
@@ -53,13 +52,11 @@ import lightButton from '~/assets/lightButton.png';
 import darkButton from '~/assets/darkButton.png';
 import autoButton from '~/assets/autoButton.png';
 
-import ContextMenuInjector from '~/components/ContextMenuInjector';
-import Title from '~/components/Title';
 import discordIcon from '~/components/discord.svg';
-import Input from '~/components/Input';
-import Textarea from '~/components/Textarea';
 import LoginWidget from '~/components/LoginWidget';
-import SelectableList from '~/components/SelectableList';
+import Button from '~/components/Button';
+import PlayMode, { WhatToPlay } from '~/components/PlayMode';
+import SidePanel from '~/components/SidePanel';
 import SettingsWidget from '~/components/SettingsWidget';
 import NormalEdge from '~/components/NormalEdge';
 import ConditionEdge from '~/components/ConditionEdge';
@@ -83,9 +80,9 @@ import {
   initialWorkspaceData,
 } from '~/constants/initialData';
 import { initFirebase } from '~/instances/firebase';
-import colors from '~/constants/colors';
 import useTimeTravel from '~/hooks/useTimeTravel';
 import useDebounceFunc from '~/hooks/useDebounceFunc';
+import useGetRelatedEdges from '~/hooks/useGetRelatedEdges';
 
 initFirebase();
 
@@ -173,9 +170,7 @@ const Story = () => {
   const [isAddingNewNode, setIsAddingNewNode] = useState<boolean | 'ending'>(false);
   const [spotlight, setSpotlight] = useState<ID | null>(null);
   const [scheduleSnapshop, setScheduleSnapshot] = useState(false);
-  const [whatToPlay, setWhatToPlay] = useState<{ toShow: ChatNode; buttons: ChatNode[] } | null>(
-    null
-  );
+  const [whatToPlay, setWhatToPlay] = useState<WhatToPlay>(null);
 
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
 
@@ -195,10 +190,7 @@ const Story = () => {
   const selectedChat = getSelectedChat(data.current);
   const selectedNodes = useMemo(() => nodes && nodes.filter((x) => x.selected), [nodes]);
 
-  const getRelatedEdges = useCallback(
-    memoizee((nodeId: ID) => edges.filter((e) => e.source === nodeId || e.target === nodeId)),
-    [nodes, edges]
-  );
+  const getRelatedEdges = useGetRelatedEdges(nodes, edges);
 
   const callUndo = useCallback(() => {
     undo();
@@ -1014,28 +1006,13 @@ const Story = () => {
 
   return (
     <>
-      {!!whatToPlay && (
-        <PlayModeWrapper>
-          <div>
-            <CharacterPlayModeName>
-              {characters &&
-                (characters.find((char) => char.id === whatToPlay.toShow.data.character)?.name ||
-                  'No one')}{' '}
-              said:
-            </CharacterPlayModeName>
-            <p>{whatToPlay.toShow.data.message}</p>
-            {whatToPlay.buttons.length > 0 ? (
-              whatToPlay.buttons.map((btn) => (
-                <Button key={btn.id} onClick={() => playFrom(btn)}>
-                  {btn.type === CHAT_NODE_TEXT_TYPE ? 'Next' : btn.data.message}
-                </Button>
-              ))
-            ) : (
-              <Button onClick={() => playFrom()}>Finish</Button>
-            )}
-          </div>
-        </PlayModeWrapper>
-      )}
+      <PlayMode
+        characters={characters}
+        whatToPlay={whatToPlay}
+        setWhatToPlay={setWhatToPlay}
+        nodes={nodes}
+        edges={edges}
+      />
       <OverlayWrapper disabled={isSelecting}>
         <OTopLeft data-testid="workspaces-list">
           <FScreenListing
@@ -1110,184 +1087,17 @@ const Story = () => {
           <LoginWidget />
         </OTopRight>
         <OTopRightUnder>
-          {selectedNodes?.length > 0 && (
-            <SidePanel
-              data-testid="side-panel"
-              tagColor={
-                theme.nodeColors[
-                  COLORS[selectedNodes[0].type as ChatNodeTypes] as
-                    | 'answerNode'
-                    | 'textNode'
-                    | 'conditionNode'
-                ]
-              }
-            >
-              <SidePanelContent>
-                {selectedNodes.length > 1 && selectedNodes.length === 1 ? (
-                  <ItemTitleBar>
-                    <ItemTitle>
-                      {selectedNodes[0].type === CHAT_NODE_TEXT_TYPE ? (
-                        <FiMessageSquare />
-                      ) : (
-                        <FiList />
-                      )}
-                      {selectedNodes[0].type}
-                    </ItemTitle>
-                    <IdTag>{selectedNodes[0].id}</IdTag>
-                  </ItemTitleBar>
-                ) : (
-                  <Title style={{ margin: 0 }}>{selectedNodes.length} nodes selected</Title>
-                )}
-                <TypeChooserWrapper>
-                  <TypeChooser
-                    onClick={() => changeTypes(selectedNodes, CHAT_NODE_TEXT_TYPE)}
-                    selected={selectedNodes.every((nd) => nd.type === CHAT_NODE_TEXT_TYPE)}
-                    data-testid="text-type"
-                  >
-                    <FiMessageSquare />
-                    <span>Text</span>
-                  </TypeChooser>
-                  <TypeChooser
-                    onClick={() => changeTypes(selectedNodes, CHAT_NODE_ANSWER_TYPE)}
-                    selected={selectedNodes.every((nd) => nd.type === CHAT_NODE_ANSWER_TYPE)}
-                    data-testid="answer-type"
-                  >
-                    <FiList />
-                    <span>Answer</span>
-                  </TypeChooser>
-                  <TypeChooser
-                    onClick={() => changeTypes(selectedNodes, CHAT_NODE_CONDITION_TYPE)}
-                    selected={selectedNodes.every((nd) => nd.type === CHAT_NODE_CONDITION_TYPE)}
-                    data-testid="condition-type"
-                  >
-                    <FiHelpCircle />
-                    <span>Condition</span>
-                  </TypeChooser>
-                </TypeChooserWrapper>
-                {selectedNodes.length > 1 &&
-                  selectedNodes.every((nd) => nd.type !== CHAT_NODE_CONDITION_TYPE) && (
-                    <ItemBottomBar>
-                      {selectedNodes.every((nd) => nd.type === CHAT_NODE_ANSWER_TYPE) && (
-                        <ContextMenuInjector
-                          options={nodes
-                            .filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE)
-                            ?.map((cond) => ({
-                              label: cond.data.name || 'Unamed condition',
-                              icon: <FiGitBranch />,
-                              selected: selectedNodes.every((nd) =>
-                                conditionsBundle
-                                  ?.find((c) => c.id === cond.id)
-                                  ?.nodes.includes(nd.id)
-                              ),
-                              type: 'item',
-                              onClick: () => {
-                                selectedNodes.forEach((nd) => {
-                                  newEdge({
-                                    source: cond.id,
-                                    sourceHandle: 'condition',
-                                    target: nd.id,
-                                    targetHandle: 'target',
-                                  });
-                                });
-                              },
-                            }))}
-                        >
-                          <Tag
-                            nodeColor={
-                              selectedNodes.every((nd) => nd.type === selectedNodes[0].type) &&
-                              theme.nodeColors[
-                                COLORS[selectedNodes[0].type as ChatNodeTypes] as
-                                  | 'answerNode'
-                                  | 'textNode'
-                                  | 'conditionNode'
-                              ]
-                            }
-                          >
-                            <FiGitBranch />
-                            <span>
-                              {conditionsBundle.filter((cond) =>
-                                selectedNodes
-                                  .map((x) => x.id)
-                                  .every((ndId) => cond.nodes.includes(ndId))
-                              ).length || 'Select'}{' '}
-                              conditions
-                            </span>
-                          </Tag>
-                        </ContextMenuInjector>
-                      )}
-                      <ContextMenuInjector
-                        options={characters.map((char) => ({
-                          label: char.name,
-                          icon: <FiUser />,
-                          type: 'item',
-                          onClick: () => {
-                            selectedNodes.forEach((nd) => {
-                              setCharacter(nd.id, char.id);
-                            });
-                          },
-                        }))}
-                      >
-                        <Tag
-                          nodeColor={
-                            selectedNodes.every((nd) => nd.type === selectedNodes[0].type) &&
-                            theme.nodeColors[
-                              COLORS[selectedNodes[0].type as ChatNodeTypes] as
-                                | 'answerNode'
-                                | 'textNode'
-                                | 'conditionNode'
-                            ]
-                          }
-                        >
-                          <FiUser />
-                          <span>
-                            {selectedNodes[0].data.character &&
-                            selectedNodes.every(
-                              (nd) => nd.data.character === selectedNodes[0].data.character
-                            )
-                              ? characters.find(({ id }) => id === selectedNodes[0].data.character)!
-                                  .name
-                              : 'Select character'}
-                          </span>
-                        </Tag>
-                      </ContextMenuInjector>
-                    </ItemBottomBar>
-                  )}
-                {selectedNodes.length === 1 &&
-                  selectedNodes[0].type !== CHAT_NODE_CONDITION_TYPE && (
-                    <Textarea
-                      onChange={handleInputChange}
-                      name="message"
-                      value={selectedNodes[0].data.message}
-                    />
-                  )}
-                {selectedNodes.length === 1 && selectedNodes[0].type === CHAT_NODE_CONDITION_TYPE && (
-                  <>
-                    <Input
-                      onChange={handleInputChange}
-                      name="name"
-                      placeholder="Condition name"
-                      value={selectedNodes[0].data.name || ''}
-                    />
-                    <h4 style={{ margin: 0 }}>Conditions</h4>
-                    <SelectableList
-                      style={{ padding: 0, fontSize: 12 }}
-                      options={
-                        conditionsBundle
-                          .find((cond) => cond.id === selectedNodes[0].id)
-                          ?.nodes.map((ndId) => ({
-                            label: nodes.find((nd) => nd.id === ndId)!.data.message,
-                            icon: <FiList size={16} />,
-                            type: 'item',
-                            onMouseEnter: () => focusOn(ndId, true),
-                            onMouseLeave: () => focusOn(selectedNodes[0].id),
-                          })) || []
-                      }
-                    />
-                  </>
-                )}
-              </SidePanelContent>
-            </SidePanel>
-          )}
+          <SidePanel
+            newEdge={newEdge}
+            setCharacter={setCharacter}
+            handleInputChange={handleInputChange}
+            focusOn={focusOn}
+            nodes={nodes}
+            characters={characters}
+            selectedNodes={selectedNodes}
+            changeTypes={changeTypes}
+            conditionsBundle={conditionsBundle}
+          />
         </OTopRightUnder>
         <OBottomLeft>
           {selectedWorkspace && (
@@ -1426,37 +1236,6 @@ const Story = () => {
 };
 
 export default Story;
-
-const ItemBottomBar = styled.div`
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  gap: 4px;
-`;
-const Tag = styled.div<{ nodeColor?: string | false }>`
-  background-color: ${({ nodeColor }) => nodeColor || 'gray'};
-  padding: 3px 6px;
-  border-radius: 8px;
-  color: white;
-  min-width: 0;
-  cursor: pointer;
-  span {
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-  }
-  font-weight: 600;
-  display: flex;
-  justify-content: space-between;
-  font-size: 14px;
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
-  transition: background-color ${({ theme }) => theme.transitions.normal}ms ease-out;
-  &:hover {
-    background-color: ${({ nodeColor }) => darken(0.05, nodeColor || 'gray')};
-  }
-`;
 
 const Discord = styled.img`
   position: fixed;
@@ -1639,155 +1418,5 @@ const StyledReactFlow = styled(ReactFlow)<{ panning?: boolean }>`
   cursor: ${({ panning }) => (panning ? 'grab' : 'default')};
   &:active {
     cursor: ${({ panning }) => (panning ? 'grabbing' : 'default')};
-  }
-`;
-
-const PlayModeWrapper = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 20;
-  background-color: ${({ theme }) => theme.colors.blurBg};
-  backdrop-filter: blur(35px) saturate(200%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  font-size: 24px;
-  & > div {
-    max-width: 90%;
-    width: 400px;
-  }
-`;
-
-const CharacterPlayModeName = styled.div`
-  font-weight: bold;
-`;
-
-const Button = styled.button<{ red?: boolean }>`
-  display: flex;
-  margin-top: 8px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 48px;
-  background: ${({ red }) => (red ? 'red' : '#0068f6')};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.2s ease-in-out;
-  align-self: flex-end;
-  &:hover {
-    background: ${({ red }) => (red ? '#ff5252' : '#0058d3')};
-  }
-`;
-
-const TypeChooserWrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-`;
-
-const TypeChooser = styled.button<{ selected: boolean }>`
-  flex: 1;
-  display: flex;
-  border: none;
-  flex-direction: column;
-  align-items: center;
-  margin: 5px;
-  font-size: 16px;
-  background: ${({ theme }) => theme.colors.inputBlurBg};
-  border-radius: 5px;
-  padding: 8px;
-  gap: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  ${({ selected }) =>
-    !selected &&
-    css`
-      color: gray !important;
-    `};
-  &:hover {
-    background: ${({ theme }) =>
-      getLuminance(theme.colors.bg) > 0.4
-        ? darken(0.5, theme.colors.inputBlurBg)
-        : lighten(0.1, theme.colors.inputBlurBg)};
-  }
-`;
-
-const SidePanelContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  flex: 1;
-`;
-
-const ItemTitleBar = styled.div`
-  background: #0068f6;
-  padding: 6px 12px;
-  border-radius: 8px;
-  text-transform: capitalize;
-  color: white;
-  display: flex;
-  justify-content: space-between;
-  padding-right: 8px;
-  align-items: center;
-  width: 100%;
-`;
-
-const ItemTitle = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 600;
-  width: 100%;
-`;
-
-const IdTag = styled.div`
-  background: white;
-  padding: 1px 6px;
-  color: #0068f6;
-  font-size: 12px;
-  font-weight: 600;
-  border-radius: 4px;
-  line-height: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  white-space: nowrap;
-`;
-
-const SidePanel = styled.div<{ tagColor?: string | false }>`
-  width: 360px;
-  background: ${({ theme }) => theme.colors.blurBg};
-  padding: 25px;
-  border-radius: 24px;
-  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
-  border: solid 1px ${({ theme }) => theme.colors.blurBorderColor};
-  z-index: 9;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  backdrop-filter: blur(35px) saturate(200%);
-  ${ItemTitleBar}, ${IdTag} {
-    background: ${({ tagColor }) => tagColor};
-    color: ${({ tagColor }) =>
-      getLuminance(tagColor || '#fff') > 0.4 ? colors.light.font : colors.dark.font};
-  }
-  ${IdTag}, ${TypeChooser} {
-    color: ${({ tagColor }) => tagColor || '#fff'};
-  }
-  -webkit-user-drag: none;
-  * {
-    user-select: none;
-    -webkit-user-drag: none;
   }
 `;
