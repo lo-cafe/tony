@@ -112,6 +112,7 @@ const _loadOrSave = (data?: DataStructure): DataStructure => {
 const Story = () => {
   const theme = useTheme();
   const loggedUserId = useUserStore((s) => s.uid);
+  const { duplicateEdgesWhenAltDragging } = useUserStore((s) => s.preferences);
 
   const loadOrSave = (newData?: DataStructure) => {
     if (newData) {
@@ -608,26 +609,60 @@ const Story = () => {
     (e: React.MouseEvent, rawNode: ChatNode) => {
       snapshot();
       if (!altPressed) return true;
-      const _clonedSelectedNodes = cloneDeep(selectedNodes);
-      const clonedSelectedNodes = _clonedSelectedNodes.length ? _clonedSelectedNodes : [rawNode];
+      const _clonedSelectedNodes = [...cloneDeep(selectedNodes), cloneDeep(rawNode)];
+      const clonedSelectedNodes = _clonedSelectedNodes.reduce(
+        (prev, curr) => (prev.find((nd) => nd.id === curr.id) ? prev : [...prev, curr]),
+        [] as ChatNode[]
+      );
       lastCopied.current = clonedSelectedNodes;
-      const newNodes = cloneDeep(clonedSelectedNodes).map((node) => ({
+
+      const idsTranslation: { [key: ID]: ID } = {};
+      clonedSelectedNodes.forEach((nd) => {
+        idsTranslation[nd.id] = nanoid(ID_SIZE);
+      });
+
+      const newNodes = clonedSelectedNodes.map((node) => ({
         ...node,
-        id: nanoid(ID_SIZE),
+        id: idsTranslation[node.id],
+        originId: node.id,
         selected: true,
         data: {
           ...node.data,
           isCopy: true,
         },
       }));
-      setNodes((nds) => [...nds.map((nd) => ({ ...nd, selected: false })), ...newNodes]);
-      // const relatedEdges = getRelatedEdges(node.id).map((e) => ({
-      //   ...e,
-      //   id: nanoid(ID_SIZE),
-      //   source: e.source === node.id ? newNodeId : e.source,
-      //   target: e.target === node.id ? newNodeId : e.target,
-      // }));
-      // setEdges((eds) => [...eds, ...relatedEdges]);
+
+      setNodes((old) => {
+        const newNodesState: ChatNode[] = [
+          ...old.map((nd) => ({ ...nd, selected: false })),
+          ...newNodes,
+        ];
+        if (duplicateEdgesWhenAltDragging) {
+          const newRelatedEdges = newNodes.map((nd) =>
+            getRelatedEdges(Object.entries(idsTranslation).find((x) => x[1] === nd.id)![0]).map(
+              (e) => ({
+                ...e,
+                id: nanoid(ID_SIZE),
+                source: idsTranslation[e.source] || e.source,
+                target: idsTranslation[e.target] || e.target,
+              })
+            )
+          );
+          console.log(newRelatedEdges);
+          const edgesToBeRemoved: ID[] = [];
+          newRelatedEdges.forEach((edgs) => {
+            edgs.forEach((edg) => {
+              if (!isConnectionValid(edg.source, edg.target, edg.sourceHandle, newNodesState))
+                edgesToBeRemoved.push(edg.id);
+            });
+          });
+          const newValidRelatedEdges = newRelatedEdges
+            .flat()
+            .filter((edg) => !edgesToBeRemoved.includes(edg.id));
+          setEdges((old) => [...old, ...newValidRelatedEdges]);
+        }
+        return newNodesState;
+      });
       return true;
     },
     [altPressed, setNodes]
@@ -1165,7 +1200,7 @@ const Story = () => {
           onMouseUp={onSelectionDragStop}
           onInit={setReactFlowInstance}
           onConnect={onConnect}
-          selectNodesOnDrag={false}
+          selectNodesOnDrag={true}
           selectionKeyCode={true}
           multiSelectionKeyCode={multiselectKeys}
           minZoom={0.1}
@@ -1322,7 +1357,7 @@ const OverlayWrapper = styled.div<{ disabled?: boolean }>`
   width: 100%;
   pointer-events: none;
   padding: 16px;
-  * > * {
+  & > * > * > * {
     pointer-events: ${({ disabled }) => (disabled ? 'none' : 'all')} !important;
   }
 `;

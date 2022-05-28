@@ -7,7 +7,7 @@ import Title from '~/components/Title';
 import Toggle from '~/components/Toggle';
 
 const Appearence = () => {
-  const { showNodeIds, showConditionsConnections } = useUserStore((s) => s.preferences);
+  const { showNodeIds, showConditionsConnections, duplicateEdgesWhenAltDragging } = useUserStore((s) => s.preferences);
   const setPreferences = useUserStore((s) => s.setPreferences);
 
   return (
@@ -28,6 +28,13 @@ const Appearence = () => {
             onChange={(e) => setPreferences({ showConditionsConnections: e.target.checked })}
           />
         </li>
+        <li>
+          <Toggle
+            label="Duplicate connections too"
+            checked={duplicateEdgesWhenAltDragging}
+            onChange={(e) => setPreferences({ duplicateEdgesWhenAltDragging: e.target.checked })}
+          />
+        </li>
       </List>
     </div>
   );
@@ -45,6 +52,7 @@ const List = styled.ul`
   font-size: 14px;
   font-weight: 500;
   overflow: hidden;
+  user-select: none;
   background: ${({ theme }) =>
     getLuminance(theme.colors.blurBg) > 0.3 ? 'rgba(0,0,0,0.04)' : 'rgba(255,255,255,0.05)'};
   li {

@@ -17,6 +17,7 @@ interface NodeColorsThemes {
 interface Prefereces {
   showNodeIds: boolean;
   showConditionsConnections: boolean;
+  duplicateEdgesWhenAltDragging: boolean;
 }
 
 interface UserStore {
@@ -61,6 +62,7 @@ const useUserStore = create<UserStore>(
       preferences: {
         showNodeIds: true,
         showConditionsConnections: false,
+        duplicateEdgesWhenAltDragging: false,
       },
       setEmail: (email) => set(() => ({ email })),
       setUid: (uid) => set(() => ({ uid })),
