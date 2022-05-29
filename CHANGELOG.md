@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.3](https://github.com/kinark/tony/compare/v0.0.2...v0.0.3) (2022-05-29)
+
+
+### Bug Fixes
+
+* wrong app version ([9383f5a](https://github.com/kinark/tony/commits/9383f5a61268b8196cf381b846b3bf0897c2540d))
+* wrong app version ([3e14f04](https://github.com/kinark/tony/commits/3e14f045c44f9d81487862ca1cd1316d72a4b634))
+
 ### [0.0.2](https://github.com/kinark/tony/compare/v0.0.1...v0.0.2) (2022-05-29)
 
 
