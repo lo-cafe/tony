@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "vite",
-    "build": "NODE_ENV=production tsc && vite build",
+    "build": "tsc && vite build",
     "preview": "vite preview",
     "prettier": "prettier 'src/**/*' --write --ignore-unknown",
     "postinstall": "patch-package",
