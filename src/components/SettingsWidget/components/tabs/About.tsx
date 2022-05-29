@@ -25,7 +25,7 @@ const Appearence = () => {
         </div>
         <div>
           App v
-          {typeof process !== 'undefined' && process.env.VERCEL_ENV === 'production'
+          {VITE_VERCEL_ENV === 'production'
             ? __APP_VERSION__
             : '-Development'}
         </div>
