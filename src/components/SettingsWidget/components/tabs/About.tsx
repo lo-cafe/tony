@@ -25,7 +25,7 @@ const Appearence = () => {
         </div>
         <div>
           App v
-          {VITE_VERCEL_ENV === 'production'
+          {import.meta.env.VITE_VERCEL_ENV === 'production'
             ? __APP_VERSION__
             : '-Development'}
         </div>
