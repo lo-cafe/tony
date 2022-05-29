@@ -14,7 +14,7 @@ const Appearence = () => {
 
   return (
     <div>
-      <Title style={{ marginTop: 0 }}>About</Title>
+      <Title style={{ marginTop: 0 }}>About Tony</Title>
       <div>
         <div>
           Created with ❤️ by <Link href="mailto:igormarcossi@hey.com">Igor Marcossi</Link>.
