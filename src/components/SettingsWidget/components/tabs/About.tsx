@@ -20,7 +20,7 @@ const Appearence = () => {
           Created with ❤️ by <Link href="mailto:igormarcossi@hey.com">Igor Marcossi</Link>.
         </div>
         <div>
-          App v{process.env.NODE_ENV === 'production' ? __APP_VERSION__ : '-Development' }.
+          App v{process.env.VERCEL_ENV === 'production' ? __APP_VERSION__ : '-Development' }.
         </div>
       </div>
     </div>
