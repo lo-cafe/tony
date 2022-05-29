@@ -17,10 +17,17 @@ const Appearence = () => {
       <Title style={{ marginTop: 0 }}>About Tony</Title>
       <div>
         <div>
-          Created with ❤️ by <Link href="mailto:igormarcossi@hey.com">Igor Marcossi</Link>.
+          Created with ❤️ by{' '}
+          <Link target="_blank" href="https://www.craft.do/s/7Jm2QcXRry23LT">
+            Igor Marcossi
+          </Link>
+          .
         </div>
         <div>
-          App v{typeof process !== 'undefined' && process.env.VERCEL_ENV === 'production' ? __APP_VERSION__ : '-Development' }
+          App v
+          {typeof process !== 'undefined' && process.env.VERCEL_ENV === 'production'
+            ? __APP_VERSION__
+            : '-Development'}
         </div>
       </div>
     </div>
