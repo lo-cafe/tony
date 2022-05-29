@@ -29,7 +29,7 @@ const Button = styled.button<{ red?: boolean }>`
   }
   &:active {
     line-height: 38px;
-    background: ${({ theme, red }) => darken(0.05, red ? 'red' : theme.nodeColors.accent)};
+    background: ${({ theme, red }) => darken(0.025, red ? 'red' : theme.nodeColors.accent)};
     outline: none;
     transform: translateY(1px);
     box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);

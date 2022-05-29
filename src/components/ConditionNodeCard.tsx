@@ -125,8 +125,8 @@ const ResultsWrapper = styled.div`
   & > div {
     background: ${({ theme }) =>
       getLuminance(theme.colors.bg) > 0.4
-        ? darken(0.2, theme.colors.bg)
-        : lighten(0.2, theme.colors.bg)};
+        ? darken(0.1, theme.colors.bg)
+        : lighten(0.1, theme.colors.bg)};
     /* background: ${({ theme }) => theme.colors.conditionResultWrapperBg}; */
     border-radius: 8px;
     padding-bottom: 5px;

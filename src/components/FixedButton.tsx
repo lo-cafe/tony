@@ -203,7 +203,7 @@ const FixedButtonWrapper = styled.button<{
     box-shadow: 0px 15px 30px rgba(0, 0, 0, 0.15);
   }
   &:active {
-    background: ${({ theme }) => darken(0.1, theme.colors.blurBg)};
+    background: ${({ theme }) => darken(0.03, theme.colors.blurBg)};
   }
 `;
 

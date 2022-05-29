@@ -59,16 +59,22 @@ const SelectableList: FC<SelectableListProps> = ({ options, onOptionSelect, ...r
 
   return (
     <Ul {...rest}>
-      {options.map((option, index) => (
-        <li key={index}>{rightOptionKind(option)}</li>
-      ))}
+      {options.length ? (
+        options.map((option, index) => <li key={index}>{rightOptionKind(option)}</li>)
+      ) : (
+        <li>
+          <OptionButton disabled>
+            <span>No options available</span>
+          </OptionButton>
+        </li>
+      )}
     </Ul>
   );
 };
 
 export default SelectableList;
 
-const OptionButton = styled.button<{ selected?: boolean }>`
+const OptionButton = styled.button<{ selected?: boolean; disabled?: boolean }>`
   display: block;
   width: 100%;
   font-family: inherit;
@@ -77,6 +83,9 @@ const OptionButton = styled.button<{ selected?: boolean }>`
   display: block;
   width: 100%;
   padding: 0;
+  opacity: ${(props) => (props.disabled ? 0.5 : 1)};
+  pointer-events: ${(props) => (props.disabled ? 'none' : 'auto')};
+  user-select: none;
   & > * {
     background-color: ${({ selected }) => (selected ? 'rgba(125,125,125,0.15)' : 'transparent')};
     display: flex;

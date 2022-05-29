@@ -300,8 +300,8 @@ const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
     &:hover {
       background-color: ${({ cardType, theme }) =>
         cardType === 'answer'
-          ? darken(0.2, theme.nodeColors.answerNode)
-          : darken(0.2, theme.nodeColors.textNode)};
+          ? darken(0.05, theme.nodeColors.answerNode)
+          : darken(0.05, theme.nodeColors.textNode)};
     }
   }
   & ${IdTag} {
