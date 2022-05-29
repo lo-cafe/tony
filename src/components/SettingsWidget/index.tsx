@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import styled, { useTheme } from 'styled-components';
 import { createPortal } from 'react-dom';
 import { Transition } from 'react-transition-group';
-import { FiSettings, FiEye, FiBox } from 'react-icons/fi';
+import { FiSettings, FiEye, FiBox, FiMoreHorizontal } from 'react-icons/fi';
 import { getLuminance } from 'polished';
 
 import CloseArea from '~/components/CloseArea';
@@ -11,6 +11,7 @@ import Card from '~/components/Card';
 
 import Appearence from './components/tabs/Appearence';
 import General from './components/tabs/General';
+import About from './components/tabs/About';
 
 const tabs = [
   {
@@ -22,6 +23,11 @@ const tabs = [
     label: 'Appearence',
     component: <Appearence />,
     icon: <FiEye />,
+  },
+  {
+    label: 'About',
+    component: <About />,
+    icon: <FiMoreHorizontal />,
   },
 ];
 

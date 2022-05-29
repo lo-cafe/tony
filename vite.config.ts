@@ -3,7 +3,6 @@ import react from '@vitejs/plugin-react';
 const path = require('path');
 import htmlPlugin from 'vite-plugin-html-config';
 
-
 // https://vitejs.dev/config/
 export default defineConfig({
   resolve: {
@@ -11,13 +10,28 @@ export default defineConfig({
       '~': path.resolve(__dirname, './src'),
     },
   },
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+  },
   plugins: [
     react(),
     htmlPlugin({
       links: [
-        { rel: 'apple-touch-icon', sizes: '180x180', href: 'https://tony.tallstranger.studio/assets/apple-touch-icon.png' },
-        { rel: 'icon', sizes: '32x32', href: 'https://tony.tallstranger.studio/assets/favicon-32x32.png' },
-        { rel: 'icon', sizes: '16x16', href: 'https://tony.tallstranger.studio/assets/favicon-16x16.png' },
+        {
+          rel: 'apple-touch-icon',
+          sizes: '180x180',
+          href: 'https://tony.tallstranger.studio/assets/apple-touch-icon.png',
+        },
+        {
+          rel: 'icon',
+          sizes: '32x32',
+          href: 'https://tony.tallstranger.studio/assets/favicon-32x32.png',
+        },
+        {
+          rel: 'icon',
+          sizes: '16x16',
+          href: 'https://tony.tallstranger.studio/assets/favicon-16x16.png',
+        },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOriginIsolated: true },
         {
