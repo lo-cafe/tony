@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.5](https://github.com/kinark/tony/compare/v0.0.4...v0.0.5) (2022-05-30)
+
+
+### Bug Fixes
+
+* fixed connection validation on edges duplicate ([3408cc7](https://github.com/kinark/tony/commits/3408cc7d46b0366db83f1aa792f7bf75a2141240))
+* removed console.log ([6060263](https://github.com/kinark/tony/commits/6060263ee11374ca9d10df83d44343c1004a1f9b))
+* removed console.log ([b26db26](https://github.com/kinark/tony/commits/b26db262873296372192349767e67bdc5ff4c399))
+
 ### [0.0.4](https://github.com/kinark/tony/compare/v0.0.3...v0.0.4) (2022-05-30)
 
 
