@@ -648,7 +648,6 @@ const Story = () => {
               })
             )
           );
-          console.log(newRelatedEdges);
           const edgesToBeRemoved: ID[] = [];
           newRelatedEdges.forEach((edgs) => {
             edgs.forEach((edg) => {
@@ -921,7 +920,6 @@ const Story = () => {
           const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
           const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
           base.push(...normalNodes);
-          console.log(childrenNodes, base);
           if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
 
           return conditionNodes.every((nd, i) => {
