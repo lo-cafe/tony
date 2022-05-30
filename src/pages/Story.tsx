@@ -879,7 +879,6 @@ const Story = () => {
         if (!sourceNode || !targetNode) return false;
 
         const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
-          console.log(internalSourceNode, targets);
           const rules = {
             [CHAT_NODE_TEXT_TYPE]: () =>
               targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
