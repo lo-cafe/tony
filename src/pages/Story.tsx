@@ -632,33 +632,43 @@ const Story = () => {
         },
       }));
 
-      setNodes((old) => {
+      setNodes((oldNodes) => {
         const newNodesState: ChatNode[] = [
-          ...old.map((nd) => ({ ...nd, selected: false })),
+          ...oldNodes.map((nd) => ({ ...nd, selected: false })),
           ...newNodes,
         ];
         if (duplicateEdgesWhenAltDragging) {
-          const newRelatedEdges = newNodes.map((nd) =>
-            getRelatedEdges(Object.entries(idsTranslation).find((x) => x[1] === nd.id)![0]).map(
-              (e) => ({
-                ...e,
-                id: nanoid(ID_SIZE),
-                source: idsTranslation[e.source] || e.source,
-                target: idsTranslation[e.target] || e.target,
-              })
-            )
-          );
-          const edgesToBeRemoved: ID[] = [];
-          newRelatedEdges.forEach((edgs) => {
-            edgs.forEach((edg) => {
-              if (!isConnectionValid(edg.source, edg.target, edg.sourceHandle, newNodesState))
-                edgesToBeRemoved.push(edg.id);
+          setEdges((oldEdges) => {
+            const newRelatedEdges = newNodes.map((nd) =>
+              getRelatedEdges(Object.entries(idsTranslation).find((x) => x[1] === nd.id)![0]).map(
+                (e) => ({
+                  ...e,
+                  id: nanoid(ID_SIZE),
+                  source: idsTranslation[e.source] || e.source,
+                  target: idsTranslation[e.target] || e.target,
+                })
+              )
+            );
+            const edgesToBeRemoved: ID[] = [];
+            newRelatedEdges.forEach((edgs) => {
+              edgs.forEach((edg) => {
+                if (
+                  !isConnectionValid(
+                    edg.source,
+                    edg.target,
+                    edg.sourceHandle,
+                    newNodesState,
+                    [...oldEdges, ...newRelatedEdges].flat()
+                  )
+                )
+                  edgesToBeRemoved.push(edg.id);
+              });
             });
+            const newValidRelatedEdges = newRelatedEdges
+              .flat()
+              .filter((edg) => !edgesToBeRemoved.includes(edg.id));
+            return [...oldEdges, ...newValidRelatedEdges];
           });
-          const newValidRelatedEdges = newRelatedEdges
-            .flat()
-            .filter((edg) => !edgesToBeRemoved.includes(edg.id));
-          setEdges((old) => [...old, ...newValidRelatedEdges]);
         }
         return newNodesState;
       });
@@ -866,10 +876,13 @@ const Story = () => {
         sourceId: ID,
         targetId: ID,
         sourceHandle?: string | null,
-        alternativeNodes?: ChatNode[]
+        alternativeNodes?: ChatNode[],
+        alternativeEdges?: Edge[]
       ): boolean => {
         const aNodes =
           !alternativeNodes || typeof alternativeNodes !== 'object' ? nodes : alternativeNodes;
+        const aEdges =
+          !alternativeEdges || typeof alternativeEdges !== 'object' ? edges : alternativeEdges;
         const _sourceNode = aNodes.find((x) => x.id === sourceId);
         const _targetNode = aNodes.find((x) => x.id === targetId);
         const sourceNode = sourceHandle === 'target' ? _targetNode : _sourceNode;
@@ -897,7 +910,7 @@ const Story = () => {
           node: ChatNode,
           handler: 'yes' | 'no' | 'condition' | 'a' | string | null = 'a'
         ) => {
-          const relatedEdges = getRelatedEdges(node.id);
+          const relatedEdges = getRelatedEdges(node.id, alternativeEdges);
           const nextNodes = aNodes.filter((x) =>
             relatedEdges
               .filter((x) => x.source === node.id && x.sourceHandle === handler)
@@ -948,7 +961,7 @@ const Story = () => {
         };
 
         const findNearestNormalParents = (node: ChatNode) => {
-          const relatedEdges = getRelatedEdges(node.id);
+          const relatedEdges = getRelatedEdges(node.id, alternativeEdges);
           const parentNodes = aNodes.filter((x) =>
             relatedEdges
               .filter((e) => e.target === node.id)
