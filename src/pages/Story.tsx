@@ -879,6 +879,7 @@ const Story = () => {
         if (!sourceNode || !targetNode) return false;
 
         const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
+          console.log(internalSourceNode, targets);
           const rules = {
             [CHAT_NODE_TEXT_TYPE]: () =>
               targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
@@ -921,23 +922,32 @@ const Story = () => {
           const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
           const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
           base.push(...normalNodes);
+          console.log(childrenNodes, base);
           if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
-          let yesChildren: ChatNode[] = [];
-          let noChildren: ChatNode[] = [];
-          conditionNodes.forEach((nd) => {
-            yesChildren =
-              nd.id === sourceId && sourceHandle === 'yes'
+
+          return conditionNodes.every((nd, i) => {
+            const otherConditionNodes = conditionNodes.filter((x, y) => y !== i);
+            const yesBase = [
+              ...(nd.id === sourceId && sourceHandle === 'yes'
                 ? [targetNode, ...getNextNodes(nd, 'yes')]
-                : getNextNodes(nd, 'yes');
-            noChildren =
-              nd.id === sourceId && sourceHandle === 'no'
+                : getNextNodes(nd, 'yes')),
+              ...base,
+            ];
+            const noBase = [
+              ...(nd.id === sourceId && sourceHandle === 'no'
                 ? [targetNode, ...getNextNodes(nd, 'no')]
-                : getNextNodes(nd, 'no');
+                : getNextNodes(nd, 'no')),
+              ...base,
+            ];
+            return otherConditionNodes.length
+              ? otherConditionNodes.every(
+                  (otherNd) =>
+                    getActualIsItAMatch(otherConditionNodes, yesBase, alternateSource) &&
+                    getActualIsItAMatch(otherConditionNodes, noBase, alternateSource)
+                )
+              : isItAMatch(alternateSource || sourceNode, yesBase) &&
+                  isItAMatch(alternateSource || sourceNode, noBase);
           });
-          return (
-            getActualIsItAMatch(yesChildren, base, alternateSource) &&
-            getActualIsItAMatch(noChildren, base, alternateSource)
-          );
         };
 
         const findNearestNormalParents = (node: ChatNode) => {
@@ -1045,7 +1055,9 @@ const Story = () => {
           <FixedButton
             disabled={!selectedNodes || selectedNodes.length !== 1}
             icon={<FiPlay />}
-            onClick={playModeRef.current ? () => playModeRef.current!.play(selectedNodes) : undefined}
+            onClick={
+              playModeRef.current ? () => playModeRef.current!.play(selectedNodes) : undefined
+            }
             color="add"
             value="Play"
           />
