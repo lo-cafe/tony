@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.4](https://github.com/kinark/tony/compare/v0.0.3...v0.0.4) (2022-05-30)
+
+
+### Bug Fixes
+
+* fixed bug with connection validation logic involving multiple conditions ([909ef2f](https://github.com/kinark/tony/commits/909ef2f1fb463a71eaf223f631261d63a184a12b))
+
 ### [0.0.3](https://github.com/kinark/tony/compare/v0.0.2...v0.0.3) (2022-05-29)
 
 
