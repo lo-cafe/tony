@@ -631,7 +631,7 @@ const Story = () => {
           isCopy: true,
         },
       }));
-
+      //
       setNodes((oldNodes) => {
         const newNodesState: ChatNode[] = [
           ...oldNodes.map((nd) => ({ ...nd, selected: false })),
