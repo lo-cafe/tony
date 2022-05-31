@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/kinark/tony/compare/v0.0.5...v0.0.6) (2022-05-31)
+
+
+### Bug Fixes
+
+* proof of concept ([53490fb](https://github.com/kinark/tony/commits/53490fb077d01ab27788347442a9d0a3ab9b2241))
+
 ### [0.0.5](https://github.com/kinark/tony/compare/v0.0.4...v0.0.5) (2022-05-30)
 
 
