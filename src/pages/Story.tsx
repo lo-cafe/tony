@@ -1356,7 +1356,6 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   bottom: 70px;
   left: ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? '-185px' : '-110px')};
   z-index: 10;
-  /* opacity: 0.6; */
   transition: opacity ${({ theme }) => theme.transitions.superQuick}ms ease-out,
     left ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? 0 : 400)}ms
       cubic-bezier(0.23, 1.48, 0.325, 0.945);
@@ -1377,6 +1376,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   }
   & > div {
     opacity: 0.5;
+    will-change: opacity;
   }
   ${({ isAddingNewNode }) =>
     isAddingNewNode !== 'ending' &&
@@ -1385,7 +1385,6 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
         & > div {
           opacity: 0.7;
         }
-        /* opacity: 0.8; */
         left: -100px;
       }
     `}
