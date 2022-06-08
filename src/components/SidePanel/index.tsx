@@ -189,6 +189,7 @@ const SidePanel: FC<SidePanelProps> = ({
             <Input
               onChange={handleInputChange}
               name="name"
+              limit="184px"
               placeholder="Condition name"
               value={selectedNodes[0].data.name || ''}
             />
