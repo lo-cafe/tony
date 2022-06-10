@@ -54,7 +54,7 @@ import autoButton from '~/assets/autoButton.png';
 
 import discordIcon from '~/components/discord.svg';
 import LoginWidget from '~/components/LoginWidget';
-import Button from '~/components/Button';
+import { CHAT_NODE_WIDTH, CHAT_NODE_HEIGHT } from '~/components/ChatNodeCard';
 import PlayMode, { WhatToPlay, PlayModeRef } from '~/components/PlayMode';
 import SidePanel from '~/components/SidePanel';
 import SettingsWidget from '~/components/SettingsWidget';
@@ -733,14 +733,29 @@ const Story = () => {
 
   const onEndDragToAddNewNode = (_e: DraggableEvent, info: DraggableData) => {
     if (!reactFlowInstance) return;
+    console.log(info);
     setIsAddingNewNode('ending');
     setTimeout(() => {
       setIsAddingNewNode(false);
     }, 1);
     const newNode = initialChatNodeData();
+    // CARD_ADD_BOTTOM_DISTANCE
+    // CARD_ADD_VISIBLE_AMOUNT
     newNode.position = reactFlowInstance.project({
-      x: info.x - 138,
-      y: info.y + window.innerHeight - 282,
+      x:
+        info.x -
+        (CHAT_NODE_WIDTH - CHAT_NODE_HEIGHT) / 2 -
+        CHAT_NODE_HEIGHT +
+        CARD_ADD_VISIBLE_AMOUNT +
+        CARD_ADD_HOVER_LIFT_AMOUNT,
+      // x: info.x - 110 - 27,
+      // y: info.y + window.innerHeight - 37 - 245,
+      y:
+        info.y +
+        window.innerHeight -
+        CARD_ADD_BOTTOM_DISTANCE -
+        CHAT_NODE_WIDTH / 2 -
+        CHAT_NODE_HEIGHT / 2,
     });
     setNodes((nds) => [...nds, newNode]);
   };
@@ -999,6 +1014,16 @@ const Story = () => {
     setScheduleSnapshot(false);
   }, [scheduleSnapshop]);
 
+  // const nodesPayload = useMemo(() => ({
+  //   setCharacter,
+  //   characters: characters,
+  //   isConnectionValid,
+  //   newEdge,
+  //   spotlight: spotlight,
+  //   conditionsBundle,
+  //   availableConditions: nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE),
+  // }), []);
+
   return (
     <>
       <PlayMode
@@ -1132,27 +1157,21 @@ const Story = () => {
           data-testid="react-flow"
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
-          nodes={nodes.map((node) => ({
-            ...node,
-            data: {
-              ...node.data,
-              setCharacter,
-              characters: characters,
-              isConnectionValid,
-              newEdge,
-              fadeOut: typeof spotlight === 'string' && node.id !== spotlight,
-              conditionsBundle,
-              availableConditions: nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE),
-            },
-          }))}
-          edges={edges.map((edge) => ({
-            ...edge,
-            data: {
-              ...edge.data,
-              spacePressed,
-              removeEdge,
-            },
-          }))}
+          nodes={nodes}
+          nodesPayload={{
+            setCharacter,
+            characters: characters,
+            isConnectionValid,
+            newEdge,
+            spotlight: spotlight,
+            conditionsBundle,
+            availableConditions: nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE),
+          }}
+          edges={edges}
+          edgesPayload={{
+            spacePressed,
+            removeEdge,
+          }}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onEdgeUpdate={onEdgeUpdate}
@@ -1351,17 +1370,28 @@ const OBottomLeft = styled(OArea)`
   align-items: flex-end;
 `;
 
+const CARD_ADD_BOTTOM_DISTANCE = 80;
+const CARD_ADD_VISIBLE_AMOUNT = 45;
+const CARD_ADD_HOVER_LIFT_AMOUNT = 20;
+
 const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
   position: fixed;
-  bottom: 70px;
-  left: ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? '-185px' : '-110px')};
+  bottom: ${CARD_ADD_BOTTOM_DISTANCE}px;
+  left: ${({ isAddingNewNode }) =>
+    isAddingNewNode === 'ending'
+      ? `-${CHAT_NODE_HEIGHT + 10}px`
+      : `-${CHAT_NODE_HEIGHT - CARD_ADD_VISIBLE_AMOUNT}px`};
   z-index: 10;
   transition: opacity ${({ theme }) => theme.transitions.superQuick}ms ease-out,
-    left ${({ isAddingNewNode }) => (isAddingNewNode === 'ending' ? 0 : 400)}ms
+    left
+      ${({ isAddingNewNode, theme }) =>
+        isAddingNewNode === 'ending' ? 0 : theme.transitions.slow}ms
       cubic-bezier(0.23, 1.48, 0.325, 0.945);
-  height: 249px;
-  width: 175px;
-  padding-top: 40px;
+  height: ${CHAT_NODE_WIDTH}px;
+  width: ${CHAT_NODE_HEIGHT}px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   &::before {
     content: '';
     position: absolute;
@@ -1373,6 +1403,7 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
     backdrop-filter: blur(35px) saturate(200%);
     border-radius: 16px;
     z-index: -1;
+    transition: transform ${({ theme }) => theme.transitions.quick}ms ease-out;
   }
   & > div {
     opacity: 0.5;
@@ -1385,21 +1416,20 @@ const CardAdd = styled.div<{ isAddingNewNode: boolean | 'ending' }>`
         & > div {
           opacity: 0.7;
         }
-        left: -100px;
+        left: -${CHAT_NODE_HEIGHT - CARD_ADD_VISIBLE_AMOUNT - CARD_ADD_HOVER_LIFT_AMOUNT}px;
       }
     `}
   &.react-draggable-dragging {
     &::before {
       transform: rotate(90deg);
     }
-    & > * {
+    & > div {
       transform: rotate(0deg);
     }
   }
-  & > * {
+  & > div {
     position: relative;
-    margin-left: -38px;
-    margin-top: -3px;
+    flex-shrink: 0;
     transition: ${({ isAddingNewNode, theme }) =>
       isAddingNewNode
         ? 'none'

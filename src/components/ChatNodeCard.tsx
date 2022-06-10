@@ -11,8 +11,8 @@ import { ChatNodeData, ChatNode, ID, Character } from '~/types/data';
 import { CHAT_NODE_ANSWER_TYPE } from '~/constants/variables';
 import colors from '~/constants/colors';
 
-interface ChatNodeCardProps extends ChatNodeData {
-  fadeOut?: boolean;
+interface ChatNodeCardProps {
+  spotlight: string | null;
   newEdge?: (data: { source: ID; sourceHandle: string; target: ID; targetHandle: string }) => void;
   conditionsBundle?: ({ nodes: ID[] } & ChatNode)[];
   availableConditions?: ChatNode[];
@@ -26,14 +26,16 @@ interface ChatNodeCardProps extends ChatNodeData {
   ) => boolean;
 }
 
-export type ChatNodeCardType = FC<NodeProps<ChatNodeCardProps>>
+export type ChatNodeCardType = FC<NodeProps<ChatNodeData> & { testId?: string, className?: string; }>
 
-const ChatNodeCard: FC<NodeProps<ChatNodeCardProps> & { testId?: string, className?: string; }> = memo(
-  ({ type, id, data, selected, className, isConnectable, testId }) => {
+const ChatNodeCard: ChatNodeCardType = memo(
+  // @ts-ignore: Unreachable code error
+  ({ type, id, data, selected, className, isConnectable, testId, nodesPayload = {} }) => {
+    const payload = nodesPayload as ChatNodeCardProps;
     const { showNodeIds } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
-      if (!data.isConnectionValid || !connection.source || !connection.target) return true;
-      return data.isConnectionValid(
+      if (!payload.isConnectionValid || !connection.source || !connection.target) return true;
+      return payload.isConnectionValid(
         connection.source,
         connection.target,
         connection.sourceHandle,
@@ -42,7 +44,7 @@ const ChatNodeCard: FC<NodeProps<ChatNodeCardProps> & { testId?: string, classNa
     };
     return (
       <Item
-        fadeOut={data.fadeOut}
+        fadeOut={typeof payload.spotlight === 'string' && id !== payload.spotlight}
         cardType={type as 'answer' | 'text'}
         selected={selected}
         className={className}
@@ -72,14 +74,14 @@ const ChatNodeCard: FC<NodeProps<ChatNodeCardProps> & { testId?: string, classNa
         <ItemBottomBar>
           {type === CHAT_NODE_ANSWER_TYPE && (
             <ContextMenuInjector
-              options={data.availableConditions?.map((cond) => ({
+              options={payload.availableConditions?.map((cond) => ({
                 label: cond.data.name || 'Unamed condition',
                 icon: <FiGitBranch />,
-                selected: data.conditionsBundle?.find((c) => c.id === cond.id)?.nodes.includes(id),
+                selected: payload.conditionsBundle?.find((c) => c.id === cond.id)?.nodes.includes(id),
                 type: 'item',
                 onClick: () =>
-                  data.newEdge &&
-                  data.newEdge({
+                  payload.newEdge &&
+                  payload.newEdge({
                     source: cond.id,
                     sourceHandle: 'condition',
                     target: id,
@@ -90,24 +92,24 @@ const ChatNodeCard: FC<NodeProps<ChatNodeCardProps> & { testId?: string, classNa
               <Tag>
                 <FiGitBranch />
                 <span>
-                  {data.conditionsBundle?.filter((cond) => cond.nodes.includes(id)).length || 'No'}{' '}
+                  {payload.conditionsBundle?.filter((cond) => cond.nodes.includes(id)).length || 'No'}{' '}
                   conditions
                 </span>
               </Tag>
             </ContextMenuInjector>
           )}
           <ContextMenuInjector
-            options={data.characters?.map((char) => ({
+            options={payload.characters?.map((char) => ({
               label: char.name,
               icon: <FiUser />,
               type: 'item',
-              onClick: () => data.setCharacter && data.setCharacter(id, char.id),
+              onClick: () => payload.setCharacter && payload.setCharacter(id, char.id),
             }))}
           >
             <Tag>
               <FiUser />
               <span>
-                {data.characters?.find((char) => char.id === data.character)?.name || 'No one'}
+                {payload.characters?.find((char) => char.id === data.character)?.name || 'No one'}
               </span>
             </Tag>
           </ContextMenuInjector>
@@ -262,14 +264,17 @@ const putInPlace = (color: string) => keyframes`
   }
 `;
 
+export const CHAT_NODE_WIDTH = 249
+export const CHAT_NODE_HEIGHT = 175
+
 const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   padding: 10px;
   padding-top: 20px;
   display: inline-block;
   background: ${({ theme }) => theme.colors.cardBg};
   border-radius: 16px;
-  width: 249px;
-  height: 175px;
+  width: ${CHAT_NODE_WIDTH}px;
+  height: ${CHAT_NODE_HEIGHT}px;
   display: flex;
   margin: 0;
   gap: 8px;

@@ -17,7 +17,7 @@
     "release:major": "standard-version --release-as major"
   },
   "dependencies": {
-    "@kinark/react-flow-renderer": "^10.2.3",
+    "@kinark/react-flow-renderer": "^10.3.1",
     "@popperjs/core": "^2.11.4",
     "axios": "^0.26.0",
     "d3": "^7.3.0",
