@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.7](https://github.com/kinark/tony/compare/v0.0.6...v0.0.7) (2022-06-11)
+
+
+### Bug Fixes
+
+* added workaround for opacity chrome bug ([ff2494f](https://github.com/kinark/tony/commits/ff2494fd2ec669c8dc36113f66ce8316f784dc23))
+* condition names overflow node width ([3aa37d3](https://github.com/kinark/tony/commits/3aa37d3987fc3538fbd43c1e4e8bfdf5f3e27e31))
+* huge performance upgrade ([2d49a40](https://github.com/kinark/tony/commits/2d49a40ca55ad65e1d2a2c6801c931534922de2e))
+
 ### [0.0.6](https://github.com/kinark/tony/compare/v0.0.5...v0.0.6) (2022-05-31)
 
 
