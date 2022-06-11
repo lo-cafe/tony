@@ -82,6 +82,8 @@ import {
 import { initFirebase } from '~/instances/firebase';
 import useTimeTravel from '~/hooks/useTimeTravel';
 import useDebounceFunc from '~/hooks/useDebounceFunc';
+import useDebouncedCallback from '~/hooks/useDebouncedCallback';
+import useDebouncedMemo from '~/hooks/useDebouncedMemo';
 import useGetRelatedEdges from '~/hooks/useGetRelatedEdges';
 
 initFirebase();
@@ -235,7 +237,7 @@ const Story = () => {
     };
   }, [bindUndoRedo]);
 
-  const conditionsBundle = useMemo<({ nodes: ID[] } & ChatNode)[]>(() => {
+  const conditionsBundle = useDebouncedMemo<({ nodes: ID[] } & ChatNode)[]>(() => {
     if (prevCounditionBundle.current && debounceConditionBundle.current) {
       clearTimeout(debounceConditionBundle.current);
       debounceConditionBundle.current = setTimeout(() => {
@@ -262,7 +264,7 @@ const Story = () => {
         }
         return newArr;
       }, [] as ({ nodes: ID[] } & ChatNode)[]);
-  }, [nodes, edges]);
+  }, [nodes, edges], 150);
 
   useEffect(() => {
     if (!loggedUserId) return;
@@ -480,7 +482,7 @@ const Story = () => {
     );
   };
 
-  const setCharacter = (targetId: ID, characterId: ID) => {
+  const setCharacter = useDebouncedCallback((targetId: ID, characterId: ID) => {
     snapshot();
     const previousCharacter = nodes.find((node) => node.id === targetId)?.data.character;
     setNodes((old) =>
@@ -497,7 +499,7 @@ const Story = () => {
         return node;
       })
     );
-  };
+  }, [nodes, setNodes], 150);
 
   const transformData = () => {
     const dataCopy = cloneDeep(data.current);
@@ -537,7 +539,7 @@ const Story = () => {
     }));
   };
 
-  const newEdge = ({
+  const newEdge = useDebouncedCallback(({
     source,
     sourceHandle,
     target,
@@ -563,7 +565,7 @@ const Story = () => {
         animated: sourceHandle !== 'condition',
       },
     ]);
-  };
+  }, [edges], 10);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -733,7 +735,6 @@ const Story = () => {
 
   const onEndDragToAddNewNode = (_e: DraggableEvent, info: DraggableData) => {
     if (!reactFlowInstance) return;
-    console.log(info);
     setIsAddingNewNode('ending');
     setTimeout(() => {
       setIsAddingNewNode(false);
@@ -885,7 +886,7 @@ const Story = () => {
     reader.readAsText(e.target.files[0]);
   };
 
-  const isConnectionValid = useCallback(
+  const isConnectionValid = useDebouncedCallback(
     memoizee(
       (
         sourceId: ID,
@@ -1005,7 +1006,8 @@ const Story = () => {
         );
       }
     ),
-    [nodes, getRelatedEdges]
+    [nodes, getRelatedEdges],
+    150
   );
 
   useEffect(() => {
@@ -1014,15 +1016,17 @@ const Story = () => {
     setScheduleSnapshot(false);
   }, [scheduleSnapshop]);
 
-  // const nodesPayload = useMemo(() => ({
-  //   setCharacter,
-  //   characters: characters,
-  //   isConnectionValid,
-  //   newEdge,
-  //   spotlight: spotlight,
-  //   conditionsBundle,
-  //   availableConditions: nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE),
-  // }), []);
+  const availableConditions = useDebouncedMemo(() => nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE), [nodes], 150)
+
+  const nodesPayload = useMemo(() => ({
+    setCharacter,
+    characters,
+    isConnectionValid,
+    newEdge,
+    spotlight,
+    conditionsBundle,
+    availableConditions,
+  }), [setCharacter, characters, isConnectionValid, newEdge, spotlight, conditionsBundle, availableConditions]);
 
   return (
     <>
@@ -1158,15 +1162,7 @@ const Story = () => {
           nodeTypes={nodeTypes}
           edgeTypes={edgeTypes}
           nodes={nodes}
-          nodesPayload={{
-            setCharacter,
-            characters: characters,
-            isConnectionValid,
-            newEdge,
-            spotlight: spotlight,
-            conditionsBundle,
-            availableConditions: nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE),
-          }}
+          nodesPayload={nodesPayload}
           edges={edges}
           edgesPayload={{
             spacePressed,

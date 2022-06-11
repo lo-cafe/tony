@@ -48,6 +48,7 @@ specifiers:
   react-colorful: ^5.5.1
   react-dom: ^18.1.0
   react-draggable: ^4.4.4
+  react-fast-compare: ^3.2.0
   react-icons: ^4.3.1
   react-loader-spinner: ^6.0.0-0
   react-popper: ^2.2.5
@@ -85,6 +86,7 @@ dependencies:
   react-colorful: 5.5.1_ef5jwxihqo6n7gxfmzogljlgcm
   react-dom: 18.1.0_react@18.1.0
   react-draggable: 4.4.5_ef5jwxihqo6n7gxfmzogljlgcm
+  react-fast-compare: 3.2.0
   react-icons: 4.4.0_react@18.1.0
   react-loader-spinner: 6.0.0-0_ef5jwxihqo6n7gxfmzogljlgcm
   react-popper: 2.3.0_42yiot2n2wjamynwfzzmd7tk3i

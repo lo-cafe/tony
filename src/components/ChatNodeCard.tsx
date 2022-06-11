@@ -1,14 +1,15 @@
-import { useState, useEffect, memo } from 'react';
+import { memo } from 'react';
 import styled, { keyframes, css } from 'styled-components';
 import { FiMessageSquare, FiUser, FiList, FiGitBranch } from 'react-icons/fi';
 import { Handle, Position, NodeProps, Connection } from '@kinark/react-flow-renderer';
 import { darken, lighten, rgba, getLuminance } from 'polished';
+import isEqual from 'react-fast-compare';
 
 import useUserStore from '~/instances/userStore';
 import LaceString from '~/components/LaceString';
 import ContextMenuInjector from '~/components/ContextMenuInjector';
 import { ChatNodeData, ChatNode, ID, Character } from '~/types/data';
-import { CHAT_NODE_ANSWER_TYPE } from '~/constants/variables';
+import { CHAT_NODE_ANSWER_TYPE, CHAT_NODE_TEXT_TYPE } from '~/constants/variables';
 import colors from '~/constants/colors';
 
 interface ChatNodeCardProps {
@@ -26,7 +27,9 @@ interface ChatNodeCardProps {
   ) => boolean;
 }
 
-export type ChatNodeCardType = FC<NodeProps<ChatNodeData> & { testId?: string, className?: string; }>
+export type ChatNodeCardType = FC<
+  NodeProps<ChatNodeData> & { testId?: string; className?: string }
+>;
 
 const ChatNodeCard: ChatNodeCardType = memo(
   // @ts-ignore: Unreachable code error
@@ -77,7 +80,9 @@ const ChatNodeCard: ChatNodeCardType = memo(
               options={payload.availableConditions?.map((cond) => ({
                 label: cond.data.name || 'Unamed condition',
                 icon: <FiGitBranch />,
-                selected: payload.conditionsBundle?.find((c) => c.id === cond.id)?.nodes.includes(id),
+                selected: payload.conditionsBundle
+                  ?.find((c) => c.id === cond.id)
+                  ?.nodes.includes(id),
                 type: 'item',
                 onClick: () =>
                   payload.newEdge &&
@@ -92,7 +97,8 @@ const ChatNodeCard: ChatNodeCardType = memo(
               <Tag>
                 <FiGitBranch />
                 <span>
-                  {payload.conditionsBundle?.filter((cond) => cond.nodes.includes(id)).length || 'No'}{' '}
+                  {payload.conditionsBundle?.filter((cond) => cond.nodes.includes(id)).length ||
+                    'No'}{' '}
                   conditions
                 </span>
               </Tag>
@@ -123,7 +129,8 @@ const ChatNodeCard: ChatNodeCardType = memo(
         />
       </Item>
     );
-  }
+  },
+  isEqual
 );
 
 export default ChatNodeCard;
@@ -264,8 +271,8 @@ const putInPlace = (color: string) => keyframes`
   }
 `;
 
-export const CHAT_NODE_WIDTH = 249
-export const CHAT_NODE_HEIGHT = 175
+export const CHAT_NODE_WIDTH = 249;
+export const CHAT_NODE_HEIGHT = 175;
 
 const Item = styled.div<ItemProps & { cardType: 'answer' | 'text' }>`
   padding: 10px;
