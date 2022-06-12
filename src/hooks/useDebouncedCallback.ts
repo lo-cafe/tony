@@ -4,7 +4,7 @@ const useDebouncedCallback = <T>(func: (...args: any[]) => T, dependencies: any[
   const currentFunc = useRef<(...args: any[]) => T>(func);
   const timeout = useRef<number | undefined>(undefined);
 
-  const updateDebounce = (...args: any[]) => {
+  const updateDebounce = () => {
     const thereWasATimeout = !!timeout.current;
     clearTimeout(timeout.current);
     timeout.current = window.setTimeout(() => {

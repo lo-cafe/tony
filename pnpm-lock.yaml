@@ -62,6 +62,7 @@ specifiers:
   ts-jest: ^27.1.4
   ts-node: ^10.7.0
   typescript: ^4.5.4
+  use-debounce: ^8.0.1
   use-debouncy: ^4.3.0
   use-resize-observer: ^8.0.0
   vite: ^2.9.5
@@ -93,6 +94,7 @@ dependencies:
   react-router-dom: 6.3.0_ef5jwxihqo6n7gxfmzogljlgcm
   react-transition-group: 4.4.2_ef5jwxihqo6n7gxfmzogljlgcm
   styled-components: 5.3.5_ef5jwxihqo6n7gxfmzogljlgcm
+  use-debounce: 8.0.1_react@18.1.0
   use-debouncy: 4.3.0_react@18.1.0
   use-resize-observer: 8.0.0_ef5jwxihqo6n7gxfmzogljlgcm
   zustand: 3.7.2_react@18.1.0
@@ -8031,6 +8033,15 @@ packages:
     dependencies:
       punycode: 2.1.1
     dev: true
+
+  /use-debounce/8.0.1_react@18.1.0:
+    resolution: {integrity: sha512-6tGAFJKJ0qCalecaV7/gm/M6n238nmitNppvR89ff1yfwSFjwFKR7IQZzIZf1KZRQhqNireBzytzU6jgb29oVg==}
+    engines: {node: '>= 10.0.0'}
+    peerDependencies:
+      react: '>=16.8.0'
+    dependencies:
+      react: 18.1.0
+    dev: false
 
   /use-debouncy/4.3.0_react@18.1.0:
     resolution: {integrity: sha512-9wJtM/RS57Bw8MIltmCjVPdpv8CqtzcNauS2Nh1/FLQrPHoJrUnslaU1cvBcJoFxp5TCw9T/09YdeilxdAZSlw==}

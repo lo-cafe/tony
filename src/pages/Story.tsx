@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import styled, { css, useTheme } from 'styled-components';
+import { useDebounce } from 'use-debounce';
 import memoizee from 'memoizee';
 import { nanoid } from 'nanoid';
 import cloneDeep from 'lodash/cloneDeep';
@@ -82,8 +83,6 @@ import {
 import { initFirebase } from '~/instances/firebase';
 import useTimeTravel from '~/hooks/useTimeTravel';
 import useDebounceFunc from '~/hooks/useDebounceFunc';
-import useDebouncedCallback from '~/hooks/useDebouncedCallback';
-import useDebouncedMemo from '~/hooks/useDebouncedMemo';
 import useGetRelatedEdges from '~/hooks/useGetRelatedEdges';
 
 initFirebase();
@@ -158,7 +157,9 @@ const Story = () => {
     data.current[0]?.chats.map(({ id, name }) => ({ id, name })) || []
   );
   const [nodes, setNodes] = useState<ChatNode[]>(data.current[0]?.chats[0]?.nodes || []);
+  const debouncedNodes = useDebounce(nodes, 150);
   const [edges, setEdges] = useState<Edge[]>(data.current[0]?.chats[0]?.edges || []);
+  const debouncedEdges = useDebounce(edges, 150);
   const { zoom } = useViewport();
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<ID | null>(
@@ -237,7 +238,7 @@ const Story = () => {
     };
   }, [bindUndoRedo]);
 
-  const conditionsBundle = useDebouncedMemo<({ nodes: ID[] } & ChatNode)[]>(() => {
+  const conditionsBundle = useMemo<({ nodes: ID[] } & ChatNode)[]>(() => {
     if (prevCounditionBundle.current && debounceConditionBundle.current) {
       clearTimeout(debounceConditionBundle.current);
       debounceConditionBundle.current = setTimeout(() => {
@@ -264,7 +265,7 @@ const Story = () => {
         }
         return newArr;
       }, [] as ({ nodes: ID[] } & ChatNode)[]);
-  }, [nodes, edges], 150);
+  }, [debouncedNodes, debouncedEdges]);
 
   useEffect(() => {
     if (!loggedUserId) return;
@@ -482,7 +483,7 @@ const Story = () => {
     );
   };
 
-  const setCharacter = useDebouncedCallback((targetId: ID, characterId: ID) => {
+  const setCharacter = useCallback((targetId: ID, characterId: ID) => {
     snapshot();
     const previousCharacter = nodes.find((node) => node.id === targetId)?.data.character;
     setNodes((old) =>
@@ -499,7 +500,7 @@ const Story = () => {
         return node;
       })
     );
-  }, [nodes, setNodes], 150);
+  }, [debouncedNodes, setNodes]);
 
   const transformData = () => {
     const dataCopy = cloneDeep(data.current);
@@ -539,7 +540,7 @@ const Story = () => {
     }));
   };
 
-  const newEdge = useDebouncedCallback(({
+  const newEdge = useCallback(({
     source,
     sourceHandle,
     target,
@@ -565,7 +566,7 @@ const Story = () => {
         animated: sourceHandle !== 'condition',
       },
     ]);
-  }, [edges], 10);
+  }, [debouncedEdges]);
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -886,7 +887,7 @@ const Story = () => {
     reader.readAsText(e.target.files[0]);
   };
 
-  const isConnectionValid = useDebouncedCallback(
+  const isConnectionValid = useCallback(
     memoizee(
       (
         sourceId: ID,
@@ -907,6 +908,7 @@ const Story = () => {
         if (!sourceNode || !targetNode) return false;
 
         const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
+          if (!targets.length) return true;
           const rules = {
             [CHAT_NODE_TEXT_TYPE]: () =>
               targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
@@ -952,19 +954,13 @@ const Story = () => {
           if (!conditionNodes.length) return isItAMatch(alternateSource || sourceNode, base);
 
           return conditionNodes.every((nd, i) => {
-            const otherConditionNodes = conditionNodes.filter((x, y) => y !== i);
-            const yesBase = [
-              ...(nd.id === sourceId && sourceHandle === 'yes'
-                ? [targetNode, ...getNextNodes(nd, 'yes')]
-                : getNextNodes(nd, 'yes')),
-              ...base,
-            ];
-            const noBase = [
-              ...(nd.id === sourceId && sourceHandle === 'no'
-                ? [targetNode, ...getNextNodes(nd, 'no')]
-                : getNextNodes(nd, 'no')),
-              ...base,
-            ];
+            const otherConditionNodes = conditionNodes.filter((_x, y) => y !== i);
+
+            const yesBase: ChatNode[] = [...getNextNodes(nd, 'yes'), ...base];
+            if (nd.id === sourceId && sourceHandle === 'yes') yesBase.unshift(targetNode)
+            const noBase: ChatNode[] = [...getNextNodes(nd, 'no'), ...base];
+            if (nd.id === sourceId && sourceHandle === 'no') yesBase.unshift(targetNode)
+
             return otherConditionNodes.length
               ? otherConditionNodes.every(
                   (otherNd) =>
@@ -1006,8 +1002,7 @@ const Story = () => {
         );
       }
     ),
-    [nodes, getRelatedEdges],
-    150
+    [debouncedNodes, debouncedEdges, getRelatedEdges]
   );
 
   useEffect(() => {
@@ -1016,7 +1011,7 @@ const Story = () => {
     setScheduleSnapshot(false);
   }, [scheduleSnapshop]);
 
-  const availableConditions = useDebouncedMemo(() => nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE), [nodes], 150)
+  const availableConditions = useMemo(() => nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE), [debouncedNodes])
 
   const nodesPayload = useMemo(() => ({
     setCharacter,
