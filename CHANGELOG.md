@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.8](https://github.com/kinark/tony/compare/v0.0.7...v0.0.8) (2022-06-12)
+
+
+### Bug Fixes
+
+* fixed callback and memo debounce issues ([f4f0d71](https://github.com/kinark/tony/commits/f4f0d71fb1530cdce86fae6d1fef32e9b6adac84))
+
 ### [0.0.7](https://github.com/kinark/tony/compare/v0.0.6...v0.0.7) (2022-06-11)
 
 
