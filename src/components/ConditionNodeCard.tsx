@@ -10,7 +10,7 @@ import LaceString from '~/components/LaceString';
 import { ID, ChatNode } from '~/types/data';
 
 interface ConditionNodeCardProps {
-  fadeOut?: boolean;
+  spotlight: string | null;
   name?: string;
   conditionsBundle?: ({ nodes: ID[] } & ChatNode)[];
   isConnectionValid?: (
@@ -22,11 +22,12 @@ interface ConditionNodeCardProps {
 }
 
 const ConditionNodeCard: FC<NodeProps<ConditionNodeCardProps> & { className?: string }> = memo(
-  ({ id, data, selected, className }) => {
+  ({ id, data, selected, className, nodesPayload = {} }) => {
+    const payload = nodesPayload as ConditionNodeCardProps;
     const { showNodeIds, showConditionsConnections } = useUserStore((s) => s.preferences);
     const isValidConnection = (connection: Connection) => {
-      if (!data.isConnectionValid || !connection.source || !connection.target) return true;
-      return data.isConnectionValid(
+      if (!payload.isConnectionValid || !connection.source || !connection.target) return true;
+      return payload.isConnectionValid(
         connection.source,
         connection.target,
         connection.sourceHandle,
@@ -35,7 +36,7 @@ const ConditionNodeCard: FC<NodeProps<ConditionNodeCardProps> & { className?: st
     };
     return (
       <Item
-        fadeOut={data.fadeOut}
+        fadeOut={typeof payload.spotlight === 'string' && id !== payload.spotlight}
         // onClick={handleOnClick(() => onCardClick && onCardClick(item.id))}
         selected={selected}
         className={className}
@@ -56,9 +57,9 @@ const ConditionNodeCard: FC<NodeProps<ConditionNodeCardProps> & { className?: st
               position={Position.Left}
               id="condition"
             />
-            {!showConditionsConnections && data.conditionsBundle && (
+            {!showConditionsConnections && payload.conditionsBundle && (
               <ConditionCounter>
-                {data.conditionsBundle?.find((cond) => cond.id === id)?.nodes.length || '0'}
+                {payload.conditionsBundle?.find((cond) => cond.id === id)?.nodes.length || '0'}
               </ConditionCounter>
             )}
             <FiHelpCircle />

@@ -483,24 +483,27 @@ const Story = () => {
     );
   };
 
-  const setCharacter = useCallback((targetId: ID, characterId: ID) => {
-    snapshot();
-    const previousCharacter = nodes.find((node) => node.id === targetId)?.data.character;
-    setNodes((old) =>
-      old.map((node) => {
-        if (node.id === targetId) {
-          return {
-            ...node,
-            data: {
-              ...node.data,
-              character: previousCharacter === characterId ? null : characterId,
-            },
-          };
-        }
-        return node;
-      })
-    );
-  }, [debouncedNodes, setNodes]);
+  const setCharacter = useCallback(
+    (targetId: ID, characterId: ID) => {
+      snapshot();
+      const previousCharacter = nodes.find((node) => node.id === targetId)?.data.character;
+      setNodes((old) =>
+        old.map((node) => {
+          if (node.id === targetId) {
+            return {
+              ...node,
+              data: {
+                ...node.data,
+                character: previousCharacter === characterId ? null : characterId,
+              },
+            };
+          }
+          return node;
+        })
+      );
+    },
+    [debouncedNodes, setNodes]
+  );
 
   const transformData = () => {
     const dataCopy = cloneDeep(data.current);
@@ -540,33 +543,36 @@ const Story = () => {
     }));
   };
 
-  const newEdge = useCallback(({
-    source,
-    sourceHandle,
-    target,
-    targetHandle,
-  }: {
-    source: ID;
-    sourceHandle: string;
-    target: ID;
-    targetHandle: string;
-  }) => {
-    snapshot();
-    const alreadyThere = edges.find((e) => e.source === source && e.target === target);
-    if (alreadyThere) return removeEdge(alreadyThere.id);
-    setEdges((old) => [
-      ...old,
-      {
-        id: nanoid(ID_SIZE),
-        source,
-        sourceHandle,
-        target,
-        targetHandle,
-        type: sourceHandle === 'condition' ? 'condition' : 'normal',
-        animated: sourceHandle !== 'condition',
-      },
-    ]);
-  }, [debouncedEdges]);
+  const newEdge = useCallback(
+    ({
+      source,
+      sourceHandle,
+      target,
+      targetHandle,
+    }: {
+      source: ID;
+      sourceHandle: string;
+      target: ID;
+      targetHandle: string;
+    }) => {
+      snapshot();
+      const alreadyThere = edges.find((e) => e.source === source && e.target === target);
+      if (alreadyThere) return removeEdge(alreadyThere.id);
+      setEdges((old) => [
+        ...old,
+        {
+          id: nanoid(ID_SIZE),
+          source,
+          sourceHandle,
+          target,
+          targetHandle,
+          type: sourceHandle === 'condition' ? 'condition' : 'normal',
+          animated: sourceHandle !== 'condition',
+        },
+      ]);
+    },
+    [debouncedEdges]
+  );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
@@ -909,17 +915,26 @@ const Story = () => {
 
         const isItAMatch = (internalSourceNode: ChatNode, targets: ChatNode[]) => {
           if (!targets.length) return true;
+          const truths = {
+            allTargetsAreAnswers: function () {
+              return targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE);
+            },
+            onlyOneTextTarget: function () {
+              return targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE;
+            },
+            any: function () {
+              const that = this;
+              const allTruths = (Object.keys(this) as (keyof typeof that)[]);
+              return allTruths.some((truth) => truth === 'any' ? false : that[truth]());
+            },
+          };
           const rules = {
-            [CHAT_NODE_TEXT_TYPE]: () =>
-              targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
-              (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
-            [CHAT_NODE_ANSWER_TYPE]: () =>
-              targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE,
+            [CHAT_NODE_TEXT_TYPE]: () => truths.any(),
+            [CHAT_NODE_ANSWER_TYPE]: () => truths.onlyOneTextTarget(),
             [CHAT_NODE_CONDITION_TYPE]: () =>
               sourceHandle === 'condition'
-                ? targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE)
-                : targets.every((x) => x.type === CHAT_NODE_ANSWER_TYPE) ||
-                  (targets.length === 1 && targets[0].type === CHAT_NODE_TEXT_TYPE),
+                ? truths.allTargetsAreAnswers()
+                : truths.any(),
           };
           return rules[internalSourceNode.type as keyof typeof rules]();
         };
@@ -957,9 +972,9 @@ const Story = () => {
             const otherConditionNodes = conditionNodes.filter((_x, y) => y !== i);
 
             const yesBase: ChatNode[] = [...getNextNodes(nd, 'yes'), ...base];
-            if (nd.id === sourceId && sourceHandle === 'yes') yesBase.unshift(targetNode)
+            if (nd.id === sourceId && sourceHandle === 'yes') yesBase.unshift(targetNode);
             const noBase: ChatNode[] = [...getNextNodes(nd, 'no'), ...base];
-            if (nd.id === sourceId && sourceHandle === 'no') yesBase.unshift(targetNode)
+            if (nd.id === sourceId && sourceHandle === 'no') yesBase.unshift(targetNode);
 
             return otherConditionNodes.length
               ? otherConditionNodes.every(
@@ -995,7 +1010,7 @@ const Story = () => {
         }
 
         return (
-          getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)], []) &&
+          getActualIsItAMatch([targetNode, ...getNextNodes(sourceNode, sourceHandle)]) &&
           findNearestNormalParents(sourceNode).every((x) =>
             getActualIsItAMatch(getNextNodes(x), [], x)
           )
@@ -1011,17 +1026,31 @@ const Story = () => {
     setScheduleSnapshot(false);
   }, [scheduleSnapshop]);
 
-  const availableConditions = useMemo(() => nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE), [debouncedNodes])
+  const availableConditions = useMemo(
+    () => nodes.filter((nd) => nd.type === CHAT_NODE_CONDITION_TYPE),
+    [debouncedNodes]
+  );
 
-  const nodesPayload = useMemo(() => ({
-    setCharacter,
-    characters,
-    isConnectionValid,
-    newEdge,
-    spotlight,
-    conditionsBundle,
-    availableConditions,
-  }), [setCharacter, characters, isConnectionValid, newEdge, spotlight, conditionsBundle, availableConditions]);
+  const nodesPayload = useMemo(
+    () => ({
+      setCharacter,
+      characters,
+      isConnectionValid,
+      newEdge,
+      spotlight,
+      conditionsBundle,
+      availableConditions,
+    }),
+    [
+      setCharacter,
+      characters,
+      isConnectionValid,
+      newEdge,
+      spotlight,
+      conditionsBundle,
+      availableConditions,
+    ]
+  );
 
   return (
     <>
