@@ -63,8 +63,7 @@ const getTransformedItems = ({
   getRecent,
   numberOfRecentItems = 3,
 }: TransformProps): Item[] => {
-  if (!rawRecentItems.length)
-    return getRecent ? allItems.slice(0, numberOfRecentItems) : allItems;
+  if (!rawRecentItems.length) return getRecent ? allItems.slice(0, numberOfRecentItems) : allItems;
   const recentItems = rawRecentItems
     .map(({ id }) => allItems.find((item) => item.id === id))
     .filter((x) => !!x) as Item[];
@@ -192,7 +191,7 @@ const FScreenListing: FC<FScreenListingProps> = memo(
           {itemsToIterate.map(({ id, name, disabled }) => (
             <Transition appear key={id} timeout={300} classNames="item">
               {(state) => (
-                <AutoWidth state={state} key={id}>
+                <AutoWidth fadeOnly={fullScreen} state={state} key={id}>
                   <StyledFixedBtn
                     data={id}
                     selected={selectedItemId === id}
@@ -225,9 +224,10 @@ const FScreenListing: FC<FScreenListingProps> = memo(
           (items.length > numberOfRecentItems || numberOfRecentItems === 0) && (
             <FixedButton
               icon={<FiGrid />}
-              value={`See${numberOfRecentItems !== 0 ? ` all ${items.length}` : ''}  ${listName}`}
+              value={`See${numberOfRecentItems !== 0 ? ` all ${items.length}` : ''} ${listName}`}
               onClick={() => setFullScreen(true)}
               color="add"
+              style={{ margin: 4 }}
             />
           )}
       </Wrapper>
@@ -238,7 +238,7 @@ const FScreenListing: FC<FScreenListingProps> = memo(
 export default FScreenListing;
 
 const StyledFixedBtn = styled(FixedButton)`
-  margin: 0 4px;
+  margin: 4px;
   /* &:first-of-type {
     margin-left: 0;
   } */
@@ -295,7 +295,8 @@ const Wrapper = styled.div<WrapperProps>`
   height: 100%;
   display: flex;
   /* color: #424242; */
-  transition: backdrop-filter ${({ theme }) => theme.transitions.normal}ms ease-out, background ${({ theme }) => theme.transitions.normal}ms ease-out;
+  transition: backdrop-filter ${({ theme }) => theme.transitions.normal}ms ease-out,
+    background ${({ theme }) => theme.transitions.normal}ms ease-out;
   align-items: flex-start;
   background: ${({ fullScreen, leaving, theme }) =>
     fullScreen && !leaving ? theme.colors.blurBg : transparentize(1, theme.colors.blurBg)};
@@ -306,6 +307,7 @@ const Wrapper = styled.div<WrapperProps>`
   padding-left: ${padding('left')};
   justify-content: ${justifyContent};
   align-content: ${alignContent};
+  will-change: backdrop-filter, background;
   backdrop-filter: ${({ fullScreen, leaving }) =>
     fullScreen && !leaving ? 'blur(35px) saturate(200%)' : 'unset'};
   pointer-events: ${({ fullScreen, leaving }) =>

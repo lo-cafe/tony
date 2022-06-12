@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, HTMLAttributes } from 'react';
 import styled, { css } from 'styled-components';
 import { FiMessageSquare, FiTrash2, FiEdit2, FiDownload, FiCheck } from 'react-icons/fi';
 import AutowidthInput from 'react-autowidth-input';
@@ -7,7 +7,7 @@ import { darken } from 'polished';
 
 import { ID } from '~/types/data';
 
-interface FixedButtonProps {
+interface FixedButtonProps extends HTMLAttributes<HTMLDivElement> {
   data?: any;
   onClick?: (data?: any) => void;
   onDelete?: (data?: any) => void;

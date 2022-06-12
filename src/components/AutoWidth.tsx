@@ -5,10 +5,11 @@ import useResizeObserver from 'use-resize-observer';
 
 interface AutoWidthProps {
   state: 'unmounted' | 'entering' | 'entered' | 'exiting' | 'exited';
+  fadeOnly?: boolean;
   children: React.ReactNode;
 }
 
-const AutoWidth: FC<AutoWidthProps> = ({ children, state }) => {
+const AutoWidth: FC<AutoWidthProps> = ({ children, state, fadeOnly }) => {
   const [width, setWidth] = useState(0);
   const [measured, setMeasured] = useState(false);
   const [entered, setEntered] = useState(false);
@@ -73,9 +74,14 @@ const AutoWidth: FC<AutoWidthProps> = ({ children, state }) => {
           </Measurements>,
           document.body
         )}
-      <WidthMutatnt state={state} ref={ref} style={{ width: entered ? 'auto' : `${width}px` }}>
+      <WidthMutant
+        fadeOnly={fadeOnly}
+        state={state}
+        ref={ref}
+        style={{ width: entered ? 'auto' : `${width}px` }}
+      >
         {children}
-      </WidthMutatnt>
+      </WidthMutant>
     </>
   );
 };
@@ -96,10 +102,11 @@ const Measurements = styled.div`
   pointer-events: none;
 `;
 
-const WidthMutatnt = styled.div<{
+const WidthMutant = styled.div<{
+  fadeOnly?: boolean;
   state: 'unmounted' | 'entering' | 'entered' | 'exiting' | 'exited';
 }>`
-  transition: width ${({ theme }) => theme.transitions.normal}ms ease-out,
+  transition: width ${({ theme, fadeOnly }) => (fadeOnly ? 0 : theme.transitions.normal)}ms ease-out,
     opacity ${({ theme }) => theme.transitions.normal}ms ease-out;
   opacity: ${({ state }) => (state === 'entered' || state === 'entering' ? 1 : 0)};
 `;
