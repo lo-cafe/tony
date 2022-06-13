@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.10](https://github.com/kinark/tony/compare/v0.0.9...v0.0.10) (2022-06-13)
+
+
+### Bug Fixes
+
+* validation function weren't working properly ([6e68621](https://github.com/kinark/tony/commits/6e68621d512eb8fa6381c915208e9ec4a1a6f9df))
+
 ### [0.0.9](https://github.com/kinark/tony/compare/v0.0.8...v0.0.9) (2022-06-13)
 
 
