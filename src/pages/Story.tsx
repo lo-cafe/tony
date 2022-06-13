@@ -683,7 +683,7 @@ const Story = () => {
       });
       return true;
     },
-    [altPressed, setNodes]
+    [nodes, edges, altPressed, setEdges, setNodes]
   );
 
   const onNodeDrag = useCallback(
@@ -924,17 +924,15 @@ const Story = () => {
             },
             any: function () {
               const that = this;
-              const allTruths = (Object.keys(this) as (keyof typeof that)[]);
-              return allTruths.some((truth) => truth === 'any' ? false : that[truth]());
+              const allTruths = Object.keys(this) as (keyof typeof that)[];
+              return allTruths.some((truth) => (truth === 'any' ? false : that[truth]()));
             },
           };
           const rules = {
             [CHAT_NODE_TEXT_TYPE]: () => truths.any(),
             [CHAT_NODE_ANSWER_TYPE]: () => truths.onlyOneTextTarget(),
             [CHAT_NODE_CONDITION_TYPE]: () =>
-              sourceHandle === 'condition'
-                ? truths.allTargetsAreAnswers()
-                : truths.any(),
+              sourceHandle === 'condition' ? truths.allTargetsAreAnswers() : truths.any(),
           };
           return rules[internalSourceNode.type as keyof typeof rules]();
         };
@@ -959,9 +957,7 @@ const Story = () => {
           alternateSource?: ChatNode
         ): boolean => {
           if (_childrenNodes.length === 0) return true;
-          const childrenNodes = _childrenNodes.filter(
-            (x) => _childrenNodes.filter((y) => y.id === x.id).length === 1
-          );
+          const childrenNodes = _childrenNodes.filter((item, index) => _childrenNodes.indexOf(item) === index);
           const base: ChatNode[] = [..._base];
           const normalNodes = childrenNodes.filter((x) => x.type !== CHAT_NODE_CONDITION_TYPE);
           const conditionNodes = childrenNodes.filter((x) => x.type === CHAT_NODE_CONDITION_TYPE);
